@@ -26,6 +26,8 @@ package simexplorer.files;
 
 import simexplorer.apdusender.APDUSender;
 import simexplorer.decoders.SIMFileNotFoundException;
+import simexplorer.efTools.NodeDef;
+import simexplorer.utils.HexUtil;
 
 /**
  *
@@ -43,22 +45,32 @@ public abstract class File {
     {
         return (resposta.length == 2) && resposta[0] == (byte)0x94 && resposta[1] == (byte)0x04;
     }
-    
+
+    public static byte[] buildSelectApdu(byte[] fileID) {
+        String apduHex =
+                fileID.length == 2
+                        ? "A0A4000002"
+                        : "A0A40400" + HexUtil.itoa(fileID.length, 2);
+
+        apduHex += HexUtil.byteArrayToHexString(fileID);
+        return HexUtil.hexStringToByteArray(apduHex);
+    }
+
     public File(APDUSender apduSender, String nome, String[] pais) throws SIMFileNotFoundException 
     {
         this.nome = nome;
         this.pais = pais;
-        fileID = FileMap.nameToHex(nome);
+        fileID = NodeDef.fidBytesByName(nome);
         if(fileID == null) throw (new SIMFileNotFoundException("File " + nome + " not mapped"));
         for(int i=0;i<pais.length;i++)
         {
-            byte[] file = FileMap.nameToHex(pais[i]);
+            byte[] file = NodeDef.fidBytesByName(pais[i]);
             if(file == null) throw (new SIMFileNotFoundException("File " + pais[i] + " not mapped"));
-            resposta = apduSender.enviarAPDU(new byte[]{(byte)0xa0, (byte)0xa4, 0x00, 0x00, 0x02, file[0], file[1] });
+            resposta = apduSender.enviarAPDU(buildSelectApdu(file));
             if(naoEncontrado(resposta)) throw (new SIMFileNotFoundException("File " + pais[i] + " not found."));
         }
 
-        resposta = apduSender.enviarAPDU(new byte[]{(byte)0xa0, (byte)0xa4, 0x00, 0x00, 0x02, fileID[0], fileID[1] });
+        resposta = apduSender.enviarAPDU(buildSelectApdu(fileID));
         if(naoEncontrado(resposta)) 
         {
             throw (new SIMFileNotFoundException("File " + nome + " not found."));

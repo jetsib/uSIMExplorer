@@ -26,6 +26,7 @@
 package simexplorer;
 
 import simexplorer.apdusender.APDUSender;
+import simexplorer.efTools.FileTreeDef;
 import simexplorer.files.File;
 import simexplorer.files.EF;
 import simexplorer.files.DF;
@@ -47,6 +48,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import simexplorer.decoders.DecodeSMS;
@@ -154,7 +156,35 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
         return responseAPDU.getBytes();
         
     }
-    
+
+    private void initTreeFiles() {
+        DefaultMutableTreeNode root = new DefaultMutableTreeNode("root");
+        DefaultMutableTreeNode mf   = new DefaultMutableTreeNode(FileTreeDef.MF);
+        root.add(mf);
+
+        mf.add(new DefaultMutableTreeNode(FileTreeDef.ICCID));
+
+        DefaultMutableTreeNode telecom = new DefaultMutableTreeNode(FileTreeDef.TELECOM);
+        for (Object ef : FileTreeDef.TELECOM_EF)
+            telecom.add(new DefaultMutableTreeNode(ef));
+        mf.add(telecom);
+
+        DefaultMutableTreeNode gsm = new DefaultMutableTreeNode(FileTreeDef.DF_GSM);
+        for (Object ef : FileTreeDef.GSM_EF)
+            gsm.add(new DefaultMutableTreeNode(ef));
+        mf.add(gsm);
+
+        DefaultMutableTreeNode usim = new DefaultMutableTreeNode(FileTreeDef.ADF_USIM);
+        for (Object ef : FileTreeDef.USIM_EF)
+            usim.add(new DefaultMutableTreeNode(ef));
+        mf.add(usim);
+
+        treeFiles.setModel(new DefaultTreeModel(root));
+        treeFiles.setComponentPopupMenu(mnuTreeFiles);
+        treeFiles.setEnabled(false);
+        treeFiles.setRootVisible(false);
+    }
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -230,99 +260,8 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
             }
         });
 
-        javax.swing.tree.DefaultMutableTreeNode treeNode1 = new javax.swing.tree.DefaultMutableTreeNode("root");
-        javax.swing.tree.DefaultMutableTreeNode treeNode2 = new javax.swing.tree.DefaultMutableTreeNode("MF");
-        javax.swing.tree.DefaultMutableTreeNode treeNode3 = new javax.swing.tree.DefaultMutableTreeNode("ICCID");
-        treeNode2.add(treeNode3);
-        treeNode3 = new javax.swing.tree.DefaultMutableTreeNode("TELECOM");
-        javax.swing.tree.DefaultMutableTreeNode treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("ADN");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("FDN");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("SMS");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("CCP");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("MSISDN");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("SMSP");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("SMSS");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("LND");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("SDN");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("EXT1");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("EXT2");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("EXT3");
-        treeNode3.add(treeNode4);
-        treeNode2.add(treeNode3);
-        treeNode3 = new javax.swing.tree.DefaultMutableTreeNode("GSM");
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("LP");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("IMSI");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("KC");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("PLMNSel");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("HPLMN");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("ACMmax");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("SST");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("ACM");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("GID1");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("GID2");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("PUCT");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("CBMI");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("SPN");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("CBMID");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("BCCH");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("ACC");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("FPLMN");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("LOCI");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("AD");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("PHASE");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("VGCS");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("VGCSS");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("VBS");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("VBSS");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("eMLPP");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("AAeM");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("ECC");
-        treeNode3.add(treeNode4);
-        treeNode4 = new javax.swing.tree.DefaultMutableTreeNode("CBMIR");
-        treeNode3.add(treeNode4);
-        treeNode2.add(treeNode3);
-        treeNode1.add(treeNode2);
-        treeFiles.setModel(new javax.swing.tree.DefaultTreeModel(treeNode1));
-        treeFiles.setComponentPopupMenu(mnuTreeFiles);
-        treeFiles.setEnabled(false);
-        treeFiles.setRootVisible(false);
+        initTreeFiles();
+
         treeFiles.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mousePressed(java.awt.event.MouseEvent evt) {
                 treeFilesMousePressed(evt);
@@ -1015,13 +954,24 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
                 r[r.length-1] == (byte)0x00;
     }
 
-    private SIMCardType detectSIMCardType() {
-        byte response[] = this.enviarAPDU(new byte[]{CURRENT_CLA, (byte)0xa4, (byte)0x00, (byte)0x00, (byte)0x02, (byte)0x7f, (byte)0x4d});
+    private boolean supportsUSIM() {
+        CURRENT_CLA=0x00;
+        byte[] r = enviarAPDU(new byte[]{
+                CURRENT_CLA, (byte)0xA4, (byte)0x04, (byte)0x00, (byte)0x07,
+                (byte)0xA0, 0x00, 0x00, 0x00, (byte)0x87, 0x10, 0x02
+        });
 
-        if (is6E00(response)) {
-            CURRENT_CLA = (byte)0x00;
-            response = this.enviarAPDU(new byte[]{(byte)CURRENT_CLA, (byte)0xa4, (byte)0x00, (byte)0x00, (byte)0x02, (byte)0x7f, (byte)0x4d});
+        if (r.length < 2) return false;
+        byte sw1 = r[r.length - 2];
+        return sw1 == (byte)0x90 || sw1 == (byte)0x61 || sw1 == (byte)0x9F;
+    }
+
+    private SIMCardType detectSIMCardType() {
+        if (supportsUSIM()) {
+            return SIMCardType.USIM;
         }
+        CURRENT_CLA= (byte) 0xA0;
+        byte response[] = this.enviarAPDU(new byte[]{CURRENT_CLA, (byte)0xa4, (byte)0x00, (byte)0x00, (byte)0x02, (byte)0x7f, (byte)0x4d});
 
         if(response.length == 2)
         {

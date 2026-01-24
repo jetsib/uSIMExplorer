@@ -30,5 +30,6 @@ package simexplorer.simcardcloner;
  */
 public enum SIMCardType {
     Regular,
-    MagicSIM
+    MagicSIM,
+    USIM
 }

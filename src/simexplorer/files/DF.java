@@ -75,10 +75,6 @@ public class DF extends File{
         byte puk2Status = this.resposta[21];
         isUnblockCHV2Blocked = (puk2Status & 0xF)==0;
 
-
-
-
-        
     }
     
     public String getCHVInfo()
