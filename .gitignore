@@ -1,0 +1,80 @@
+############################
+# Java
+############################
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+
+############################
+# Build directories
+############################
+/out/
+/bin/
+/target/
+/build/
+
+############################
+# IntelliJ IDEA
+############################
+.idea/
+*.iml
+*.iws
+*.ipr
+
+############################
+# NetBeans
+############################
+/nbproject/private/
+/build/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+############################
+# Gradle
+############################
+.gradle/
+
+############################
+# Maven
+############################
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+dependency-reduced-pom.xml
+
+############################
+# Logs
+############################
+*.log
+
+############################
+# OS files
+############################
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+############################
+# Temporary / Backup
+############################
+*~
+*.swp
+*.swo
+*.tmp
+*.bak
+
+############################
+# IDE generic
+############################
+.vscode/
