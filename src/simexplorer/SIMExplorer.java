@@ -41,6 +41,9 @@ import simexplorer.decoders.SIMFileNotFoundException;
 import simexplorer.history.HistoryLogger;
 import simexplorer.service.ApduService;
 import simexplorer.smartcard.SmartCardController;
+import simexplorer.ui.dialog.DialogCHV;
+import simexplorer.ui.dialog.DialogEnviarAPDU;
+import simexplorer.ui.dialog.DialogSobre;
 
 /**
  *

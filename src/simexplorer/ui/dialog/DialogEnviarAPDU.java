@@ -23,7 +23,7 @@
  */
 
 
-package simexplorer;
+package simexplorer.ui.dialog;
 
 
 import java.util.ArrayList;

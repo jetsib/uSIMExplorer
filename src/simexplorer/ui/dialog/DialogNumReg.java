@@ -22,7 +22,7 @@
  * THE SOFTWARE.
  */
 
-package simexplorer;
+package simexplorer.ui.dialog;
 
 import javax.swing.JOptionPane;
 

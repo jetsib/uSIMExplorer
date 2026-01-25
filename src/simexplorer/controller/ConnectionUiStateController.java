@@ -6,7 +6,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
 import javax.swing.JTree;
-import simexplorer.DialogCopia;
+import simexplorer.ui.dialog.DialogCopia;
 import simexplorer.SIMExplorer;
 import simexplorer.service.ApduService;
 import simexplorer.simcardcloner.SIMCardType;
