@@ -75,8 +75,15 @@ public class DecodeEFFactory {
         {
             return new DecodeEF8f0d();
         }
-        
-        
+        if(effile.trim().toUpperCase().endsWith("PLMN"))
+        {
+            return new DecodePLMN();
+        }
+        if(effile.trim().toUpperCase().contains("PLMN") && effile.trim().toUpperCase().endsWith("WACT") )
+        {
+            return new DecodePLMNwAcT();
+        }
+
         return null;
     }
 }

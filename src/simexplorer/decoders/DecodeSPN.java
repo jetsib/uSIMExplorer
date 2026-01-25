@@ -54,7 +54,5 @@ public class DecodeSPN implements DecodeEF {
     {
         return spn;
     }
-    
 
-    
 }
