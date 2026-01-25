@@ -1,5 +1,6 @@
 package simexplorer;
 
+import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -73,6 +74,13 @@ class FileEditorController {
         edtDadosDecodificados.setSelectionStart(0);
         edtDadosDecodificados.setSelectionEnd(0);
         return true;
+    }
+
+    void handleSelection(DefaultMutableTreeNode node, boolean isRootVisible, JList lstHistoria) {
+        if (!updateForSelection(node, isRootVisible)) {
+            return;
+        }
+        lstHistoria.ensureIndexIsVisible(lstHistoria.getModel().getSize() - 1);
     }
 
     private String[] buildFilePath(DefaultMutableTreeNode node, boolean isRootVisible) {

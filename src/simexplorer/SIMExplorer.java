@@ -26,9 +26,6 @@
 package simexplorer;
 
 import simexplorer.apdusender.APDUSender;
-import java.awt.Toolkit;
-import java.awt.datatransfer.Clipboard;
-import java.awt.datatransfer.StringSelection;
 import simexplorer.reportgenerator.ReportGenerator;
 import java.util.List;
 import javax.smartcardio.CardChannel;
@@ -378,11 +375,7 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
     private void treeFilesValueChanged(javax.swing.event.TreeSelectionEvent evt) {//GEN-FIRST:event_treeFilesValueChanged
 
         DefaultMutableTreeNode node = (DefaultMutableTreeNode) treeFiles.getLastSelectedPathComponent(); 
-        if (!fileEditorController.updateForSelection(node, treeFiles.isRootVisible())) {
-            return;
-        }
-    
-        lstHistoria.ensureIndexIsVisible(lstHistoria.getModel().getSize()-1);
+        fileEditorController.handleSelection(node, treeFiles.isRootVisible(), lstHistoria);
         
     }//GEN-LAST:event_treeFilesValueChanged
 
@@ -394,20 +387,7 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
     }//GEN-LAST:event_treeFilesMousePressed
 
     private void mnuTreeFilesPopupMenuWillBecomeVisible(javax.swing.event.PopupMenuEvent evt) {//GEN-FIRST:event_mnuTreeFilesPopupMenuWillBecomeVisible
-        
-        Object lastPath = null;
-        if(treeFiles.getSelectionPath() != null) 
-            lastPath = treeFiles.getSelectionPath().getLastPathComponent();
-        if(lastPath != null) 
-        {
-            mnuEditar.setEnabled(true);
-            mnuEditar.setText("Edit " + lastPath  + "...");
-        }
-        else
-        {
-            mnuEditar.setEnabled(false);
-            mnuEditar.setText("Edit...");
-        }
+        fileTreeController.updateEditMenu(mnuEditar);
         
     }//GEN-LAST:event_mnuTreeFilesPopupMenuWillBecomeVisible
 
@@ -455,13 +435,7 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
     }//GEN-LAST:event_mnuDesconectarActionPerformed
 
     private void mnuLstHistoriaCopiarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuLstHistoriaCopiarActionPerformed
-        
-        if(lstHistoria.getSelectedValue()!=null)
-        {
-            Clipboard cb = Toolkit.getDefaultToolkit().getSystemClipboard();
-            StringSelection ss = new StringSelection(lstHistoria.getSelectedValue().toString());
-            cb.setContents(ss, null);
-        }
+        historyLogger.copySelectionToClipboard(lstHistoria);
         
     }//GEN-LAST:event_mnuLstHistoriaCopiarActionPerformed
 
@@ -480,72 +454,13 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
     }//GEN-LAST:event_mnuSobreActionPerformed
 
     private void mnuSIMCardParaArquivoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuSIMCardParaArquivoActionPerformed
-        
-        
-        (new Thread(new Runnable() {
-
-            public void run() {
-        
-                final JFileChooser fc = new JFileChooser();
-                int returnVal = fc.showSaveDialog(SIMExplorer.this);        
-
-
-                if(returnVal == JFileChooser.APPROVE_OPTION)
-                {
-                    if(fc.getSelectedFile().exists())
-                    {
-                        int r = JOptionPane.showConfirmDialog(null, "File already exists. Replace?", "", JOptionPane.YES_NO_OPTION);
-                        if(r==JOptionPane.OK_OPTION)
-                        {
-                            if(fc.getSelectedFile().delete())
-                            {
-                                DialogCopia dialog = new DialogCopia(null, fc.getSelectedFile(), SIMExplorer.this, true, SIMExplorer.this.simCardType);
-                                dialog.setVisible(true);
-                            }    
-                            else
-                                JOptionPane.showMessageDialog(null, "Can not delete file.");
-                        }
-
-                    }
-                    else
-                    {
-                        //Abrir dialogo
-                        DialogCopia dialog = new DialogCopia(null, fc.getSelectedFile(), SIMExplorer.this, true, SIMExplorer.this.simCardType);
-                        dialog.setVisible(true);
-                        
-                    }
-                }
-            }
-        })).start();
-
-        
+        connectionUiStateController.startCopyFromSimCard(this, simCardType);
     }//GEN-LAST:event_mnuSIMCardParaArquivoActionPerformed
 
     private void mnuArquivoParaSimCardActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuArquivoParaSimCardActionPerformed
 
         
-        (new Thread(new Runnable() {
-
-            public void run() {
-        
-                final JFileChooser fc = new JFileChooser();
-                int returnVal = fc.showOpenDialog(SIMExplorer.this);        
-
-
-                if(returnVal == JFileChooser.APPROVE_OPTION)
-                {
-                    if(fc.getSelectedFile().exists())
-                    {
-                        DialogCopia dialog = new DialogCopia(null, fc.getSelectedFile(), SIMExplorer.this, false, SIMExplorer.this.simCardType);
-                        dialog.setVisible(true);
-                    }
-                    else
-                    {
-                        JOptionPane.showMessageDialog(null, "File doesn't exist.");
-                    }
-                }
-            }
-        })).start();
+        connectionUiStateController.startCopyToSimCard(this, simCardType);
         
 
     }//GEN-LAST:event_mnuArquivoParaSimCardActionPerformed
@@ -556,27 +471,12 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
 
     private void conectando()
     {
-        connectionUiStateController.onConnected();
-        
-        this.simCardType = apduService.detectSimCardType();
-        if(this.simCardType == SIMCardType.MagicSIM)
-        {
-            fileTreeController.addMagicSimFiles();
-            JOptionPane.showMessageDialog(null, "MagicSim detected!");
-        }
-
+        this.simCardType = connectionUiStateController.onConnected(apduService, fileTreeController);
     }
     
     private void desconectando()
     {
-        connectionUiStateController.onDisconnected();
-        
-        if(this.simCardType == SIMCardType.MagicSIM)
-        {
-            fileTreeController.removeMagicSimFiles();
-            
-        }
-
+        connectionUiStateController.onDisconnected(fileTreeController, simCardType);
     }
     
     private void mnuItemConectarActionPerformed(java.awt.event.ActionEvent evt) {                                                
@@ -585,49 +485,42 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
 
         try {
             //Estabelece Conexão com o Cartão na Leitora
-            smartCardController.selectTerminal(mnuItemConectar.terminal_number);
-            CardTerminal terminal = smartCardController.getSelectedTerminal();
+            SmartCardController.ConnectionResult connectionResult = smartCardController.connectToTerminal(mnuItemConectar.terminal_number);
+            CardTerminal terminal = connectionResult.getTerminal();
             historyLogger.addEntry("Selected terminal: " + terminal.getName());
-            smartCardController.connect();
             historyLogger.addEntry("Connected");
+            System.out.println("card: " + connectionResult.getCard());
+            //Adquire ATR do Cartão
+            byte[] buffer = connectionResult.getAtr().getBytes();
+            historyLogger.addEntry("ATR : "  + HistoryLogger.formatBuffer(buffer));
+            //Adquire Canal de Comunicação
+            cardChannel = connectionResult.getCardChannel();
+            apduService.setCardChannel(cardChannel);
         } catch (CardException ex) {
             JOptionPane.showMessageDialog(null, ex.toString(), "Err", 0, null);
             return;
         }
-        System.out.println("card: " + smartCardController.getCard());
-
-        //Adquire ATR do Cartão
-        byte[] buffer = smartCardController.getCardAtr().getBytes();
-        historyLogger.addEntry("ATR : "  + HistoryLogger.formatBuffer(buffer));
-
-        //Adquire Canal de Comunicação
-        cardChannel = smartCardController.getCardChannel();
-        apduService.setCardChannel(cardChannel);
         
         conectando();
 
         if(threadWaitForCardAbsent == null)
         {
-            threadWaitForCardAbsent = (new Thread(new Runnable() {
-                
-                @Override
-                public synchronized void  run() {
-                    while(true)
-                    {
-                        try {
-                    
-                            smartCardController.getSelectedTerminal().waitForCardAbsent(0);
-                            if(mnuDesconectar.isVisible()) historyLogger.addEntry("Disconnected");
+            threadWaitForCardAbsent = smartCardController.startCardPresenceMonitor(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            if (mnuDesconectar.isVisible()) {
+                                historyLogger.addEntry("Disconnected");
+                            }
                             desconectando();
-                            smartCardController.getSelectedTerminal().waitForCardPresent(0);
-                        
-                        } catch (CardException ex) {
-                    
+                        }
+                    },
+                    new Runnable() {
+                        @Override
+                        public void run() {
                         }
                     }
-                }
-            }));
-            threadWaitForCardAbsent.start();
+            );
         }
         
     }

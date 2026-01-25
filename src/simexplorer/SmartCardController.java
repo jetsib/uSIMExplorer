@@ -20,6 +20,36 @@ class SmartCardController {
         factory = TerminalFactory.getDefault();
     }
 
+    static class ConnectionResult {
+        private final CardTerminal terminal;
+        private final Card card;
+        private final ATR atr;
+        private final CardChannel cardChannel;
+
+        ConnectionResult(CardTerminal terminal, Card card, ATR atr, CardChannel cardChannel) {
+            this.terminal = terminal;
+            this.card = card;
+            this.atr = atr;
+            this.cardChannel = cardChannel;
+        }
+
+        CardTerminal getTerminal() {
+            return terminal;
+        }
+
+        Card getCard() {
+            return card;
+        }
+
+        ATR getAtr() {
+            return atr;
+        }
+
+        CardChannel getCardChannel() {
+            return cardChannel;
+        }
+    }
+
     List<CardTerminal> listTerminals() throws CardException {
         terminals = factory.terminals().list();
         return terminals;
@@ -38,6 +68,31 @@ class SmartCardController {
 
     void selectTerminal(int index) {
         terminal = getTerminal(index);
+    }
+
+    ConnectionResult connectToTerminal(int index) throws CardException {
+        selectTerminal(index);
+        connect();
+        return new ConnectionResult(terminal, card, cardATR, cardChannel);
+    }
+
+    Thread startCardPresenceMonitor(Runnable onCardAbsent, Runnable onCardPresent) {
+        Thread monitorThread = new Thread(new Runnable() {
+            @Override
+            public synchronized void run() {
+                while (true) {
+                    try {
+                        terminal.waitForCardAbsent(0);
+                        onCardAbsent.run();
+                        terminal.waitForCardPresent(0);
+                        onCardPresent.run();
+                    } catch (CardException ex) {
+                    }
+                }
+            }
+        });
+        monitorThread.start();
+        return monitorThread;
     }
 
     void connect() throws CardException {

@@ -1,9 +1,12 @@
 package simexplorer;
 
+import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
 import javax.swing.JTree;
+import simexplorer.simcardcloner.SIMCardType;
 
 class ConnectionUiStateController {
     private final JTree treeFiles;
@@ -38,7 +41,7 @@ class ConnectionUiStateController {
         this.edtDadosDecodificados = edtDadosDecodificados;
     }
 
-    void onConnected() {
+    SIMCardType onConnected(ApduService apduService, FileTreeController fileTreeController) {
         treeFiles.setEnabled(true);
         mnuConectar.setVisible(false);
         mnuDesconectar.setVisible(true);
@@ -46,9 +49,15 @@ class ConnectionUiStateController {
         mnuEnviarAPDU.setEnabled(true);
         mnuGerenciarCHV.setEnabled(true);
         mnuCopia.setEnabled(true);
+        SIMCardType detectedType = apduService.detectSimCardType();
+        if (detectedType == SIMCardType.MagicSIM) {
+            fileTreeController.addMagicSimFiles();
+            JOptionPane.showMessageDialog(null, "MagicSim detected!");
+        }
+        return detectedType;
     }
 
-    void onDisconnected() {
+    void onDisconnected(FileTreeController fileTreeController, SIMCardType simCardType) {
         mnuDesconectar.setVisible(false);
         mnuConectar.setVisible(true);
         treeFiles.setEnabled(false);
@@ -59,5 +68,53 @@ class ConnectionUiStateController {
         mnuEnviarAPDU.setEnabled(false);
         mnuGerenciarCHV.setEnabled(false);
         mnuCopia.setEnabled(false);
+        if (simCardType == SIMCardType.MagicSIM) {
+            fileTreeController.removeMagicSimFiles();
+        }
+    }
+
+    void startCopyFromSimCard(SIMExplorer owner, SIMCardType simCardType) {
+        new Thread(new Runnable() {
+            public void run() {
+                final JFileChooser fc = new JFileChooser();
+                int returnVal = fc.showSaveDialog(owner);
+
+                if (returnVal == JFileChooser.APPROVE_OPTION) {
+                    if (fc.getSelectedFile().exists()) {
+                        int r = JOptionPane.showConfirmDialog(null, "File already exists. Replace?", "", JOptionPane.YES_NO_OPTION);
+                        if (r == JOptionPane.OK_OPTION) {
+                            if (fc.getSelectedFile().delete()) {
+                                DialogCopia dialog = new DialogCopia(null, fc.getSelectedFile(), owner, true, simCardType);
+                                dialog.setVisible(true);
+                            } else {
+                                JOptionPane.showMessageDialog(null, "Can not delete file.");
+                            }
+                        }
+
+                    } else {
+                        DialogCopia dialog = new DialogCopia(null, fc.getSelectedFile(), owner, true, simCardType);
+                        dialog.setVisible(true);
+                    }
+                }
+            }
+        }).start();
+    }
+
+    void startCopyToSimCard(SIMExplorer owner, SIMCardType simCardType) {
+        new Thread(new Runnable() {
+            public void run() {
+                final JFileChooser fc = new JFileChooser();
+                int returnVal = fc.showOpenDialog(owner);
+
+                if (returnVal == JFileChooser.APPROVE_OPTION) {
+                    if (fc.getSelectedFile().exists()) {
+                        DialogCopia dialog = new DialogCopia(null, fc.getSelectedFile(), owner, false, simCardType);
+                        dialog.setVisible(true);
+                    } else {
+                        JOptionPane.showMessageDialog(null, "File doesn't exist.");
+                    }
+                }
+            }
+        }).start();
     }
 }

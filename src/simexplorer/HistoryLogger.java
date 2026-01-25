@@ -1,6 +1,10 @@
 package simexplorer;
 
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import javax.swing.DefaultListModel;
+import javax.swing.JList;
 
 class HistoryLogger {
     private final DefaultListModel<String> listModel;
@@ -15,6 +19,16 @@ class HistoryLogger {
 
     void addEntry(String text) {
         listModel.addElement(text);
+    }
+
+    void copySelectionToClipboard(JList historyList) {
+        Object selectedValue = historyList.getSelectedValue();
+        if (selectedValue == null) {
+            return;
+        }
+        Clipboard cb = Toolkit.getDefaultToolkit().getSystemClipboard();
+        StringSelection ss = new StringSelection(selectedValue.toString());
+        cb.setContents(ss, null);
     }
 
     static String formatBuffer(byte[] buffer) {

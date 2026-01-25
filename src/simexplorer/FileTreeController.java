@@ -1,5 +1,6 @@
 package simexplorer;
 
+import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -69,5 +70,19 @@ class FileTreeController {
         } catch (Exception e) {
         }
         treeFiles.setModel(new DefaultTreeModel(treeRoot));
+    }
+
+    void updateEditMenu(JMenuItem editItem) {
+        Object lastPath = null;
+        if (treeFiles.getSelectionPath() != null) {
+            lastPath = treeFiles.getSelectionPath().getLastPathComponent();
+        }
+        if (lastPath != null) {
+            editItem.setEnabled(true);
+            editItem.setText("Edit " + lastPath + "...");
+        } else {
+            editItem.setEnabled(false);
+            editItem.setText("Edit...");
+        }
     }
 }
