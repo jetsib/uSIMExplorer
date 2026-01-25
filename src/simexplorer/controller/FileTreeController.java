@@ -1,4 +1,4 @@
-package simexplorer;
+package simexplorer.controller;
 
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -7,17 +7,17 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import simexplorer.efTools.FileTreeDef;
 
-class FileTreeController {
+public class FileTreeController {
     private final JTree treeFiles;
     private final JPopupMenu mnuTreeFiles;
     private DefaultMutableTreeNode treeDF_ADMIN = null;
 
-    FileTreeController(JTree treeFiles, JPopupMenu mnuTreeFiles) {
+    public FileTreeController(JTree treeFiles, JPopupMenu mnuTreeFiles) {
         this.treeFiles = treeFiles;
         this.mnuTreeFiles = mnuTreeFiles;
     }
 
-    void initTreeFiles() {
+    public void initTreeFiles() {
         DefaultMutableTreeNode root = new DefaultMutableTreeNode("root");
         DefaultMutableTreeNode mf = new DefaultMutableTreeNode(FileTreeDef.MF);
         root.add(mf);
@@ -48,7 +48,7 @@ class FileTreeController {
         treeFiles.setRootVisible(false);
     }
 
-    void addMagicSimFiles() {
+    public void addMagicSimFiles() {
         DefaultMutableTreeNode treeRoot;
         DefaultMutableTreeNode treeNode3;
         treeDF_ADMIN = new DefaultMutableTreeNode("DF.ADMIN");
@@ -63,7 +63,7 @@ class FileTreeController {
         treeFiles.setModel(new DefaultTreeModel(treeRoot));
     }
 
-    void removeMagicSimFiles() {
+    public void removeMagicSimFiles() {
         DefaultMutableTreeNode treeRoot = ((DefaultMutableTreeNode) treeFiles.getModel().getRoot());
         try {
             treeRoot.remove(treeDF_ADMIN);
@@ -72,7 +72,7 @@ class FileTreeController {
         treeFiles.setModel(new DefaultTreeModel(treeRoot));
     }
 
-    void updateEditMenu(JMenuItem editItem) {
+    public void updateEditMenu(JMenuItem editItem) {
         Object lastPath = null;
         if (treeFiles.getSelectionPath() != null) {
             lastPath = treeFiles.getSelectionPath().getLastPathComponent();

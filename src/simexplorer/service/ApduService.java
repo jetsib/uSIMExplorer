@@ -22,42 +22,43 @@
  * THE SOFTWARE.
  */
 
-package simexplorer;
+package simexplorer.service;
 
 import javax.smartcardio.CardChannel;
 import javax.smartcardio.CardException;
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
+import simexplorer.history.HistoryLogger;
 import simexplorer.simcardcloner.SIMCardType;
 
-class ApduService {
+public class ApduService {
     private final HistoryLogger historyLogger;
     private byte currentCla = (byte) 0xA0;
     private CardChannel cardChannel;
     private CommandAPDU commandAPDU;
     private ResponseAPDU responseAPDU;
 
-    ApduService(HistoryLogger historyLogger) {
+    public ApduService(HistoryLogger historyLogger) {
         this.historyLogger = historyLogger;
     }
 
-    void setCardChannel(CardChannel cardChannel) {
+    public void setCardChannel(CardChannel cardChannel) {
         this.cardChannel = cardChannel;
     }
 
-    void setCurrentCla(byte currentCla) {
+    public void setCurrentCla(byte currentCla) {
         this.currentCla = currentCla;
     }
 
-    byte getCurrentCla() {
+    public byte getCurrentCla() {
         return currentCla;
     }
 
-    byte[] enviarAPDU(byte[] c) {
+    public byte[] enviarAPDU(byte[] c) {
         return enviarAPDU(c, currentCla);
     }
 
-    byte[] enviarAPDU(byte[] c, byte currentCla) {
+    public byte[] enviarAPDU(byte[] c, byte currentCla) {
         this.currentCla = currentCla;
         c[0] = currentCla;
         commandAPDU = new CommandAPDU(c);
@@ -71,7 +72,7 @@ class ApduService {
         return responseAPDU.getBytes();
     }
 
-    boolean supportsUsim() {
+    public boolean supportsUsim() {
         setCurrentCla((byte) 0x00);
         byte[] r = enviarAPDU(new byte[]{
             currentCla, (byte) 0xA4, (byte) 0x04, (byte) 0x00, (byte) 0x07,
@@ -85,7 +86,7 @@ class ApduService {
         return sw1 == (byte) 0x90 || sw1 == (byte) 0x61 || sw1 == (byte) 0x9F;
     }
 
-    SIMCardType detectSimCardType() {
+    public SIMCardType detectSimCardType() {
         if (supportsUsim()) {
             return SIMCardType.USIM;
         }

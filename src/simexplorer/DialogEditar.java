@@ -123,6 +123,6 @@ public class DialogEditar extends javax.swing.JDialog {
     private javax.swing.JButton btnCancelar;
     private javax.swing.JButton btnOK;
     private javax.swing.JScrollPane jScrollPane1;
-    protected javax.swing.JTextArea txtEdicao;
+    public javax.swing.JTextArea txtEdicao;
     // End of variables declaration//GEN-END:variables
 }

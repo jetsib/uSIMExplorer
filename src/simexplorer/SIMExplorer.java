@@ -31,8 +31,16 @@ import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
+import simexplorer.controller.ConnectionUiStateController;
+import simexplorer.controller.FileEditorController;
+import simexplorer.controller.FileTreeController;
+import simexplorer.controller.SimConnectionController;
+import simexplorer.controller.TerminalMenuController;
 import simexplorer.decoders.DecodeSMS;
 import simexplorer.decoders.SIMFileNotFoundException;
+import simexplorer.history.HistoryLogger;
+import simexplorer.service.ApduService;
+import simexplorer.smartcard.SmartCardController;
 
 /**
  *

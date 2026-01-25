@@ -1,27 +1,30 @@
-package simexplorer;
+package simexplorer.controller;
 
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
 import javax.swing.tree.DefaultMutableTreeNode;
+import simexplorer.DialogEditar;
+import simexplorer.DialogNumReg;
+import simexplorer.SIMExplorer;
 import simexplorer.decoders.SIMFileNotFoundException;
 import simexplorer.files.DF;
 import simexplorer.files.EF;
 import simexplorer.files.File;
 
-class FileEditorController {
+public class FileEditorController {
     private final SIMExplorer owner;
     private final JTextArea edtDadosBrutos;
     private final JTextArea edtDadosDecodificados;
     private File lastFile = null;
 
-    FileEditorController(SIMExplorer owner, JTextArea edtDadosBrutos, JTextArea edtDadosDecodificados) {
+    public FileEditorController(SIMExplorer owner, JTextArea edtDadosBrutos, JTextArea edtDadosDecodificados) {
         this.owner = owner;
         this.edtDadosBrutos = edtDadosBrutos;
         this.edtDadosDecodificados = edtDadosDecodificados;
     }
 
-    void updateEf(String nome, String[] pais) {
+    public void updateEf(String nome, String[] pais) {
         try {
             EF ef = new EF(owner, nome, pais);
             lastFile = ef;
@@ -39,7 +42,7 @@ class FileEditorController {
         }
     }
 
-    void updateDf(String nome, String[] pais) {
+    public void updateDf(String nome, String[] pais) {
         try {
             DF df = new DF(owner, nome, pais);
             lastFile = df;
@@ -55,7 +58,7 @@ class FileEditorController {
         }
     }
 
-    boolean updateForSelection(DefaultMutableTreeNode node, boolean isRootVisible) {
+    public boolean updateForSelection(DefaultMutableTreeNode node, boolean isRootVisible) {
         edtDadosBrutos.setText("");
         edtDadosDecodificados.setText("");
 
@@ -76,7 +79,7 @@ class FileEditorController {
         return true;
     }
 
-    void handleSelection(DefaultMutableTreeNode node, boolean isRootVisible, JList lstHistoria) {
+    public void handleSelection(DefaultMutableTreeNode node, boolean isRootVisible, JList lstHistoria) {
         if (!updateForSelection(node, isRootVisible)) {
             return;
         }
@@ -91,7 +94,7 @@ class FileEditorController {
         return pais;
     }
 
-    void editLastFile() {
+    public void editLastFile() {
         if (lastFile.getClass() == EF.class) {
             EF ef = (EF) lastFile;
             if (ef.getStructureOfFile() == EF.StructureOfFile.Transparent) {

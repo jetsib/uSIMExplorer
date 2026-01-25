@@ -1,14 +1,16 @@
-package simexplorer;
+package simexplorer.controller;
 
 import java.util.function.BooleanSupplier;
 import javax.smartcardio.CardChannel;
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
-import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import simexplorer.history.HistoryLogger;
+import simexplorer.service.ApduService;
+import simexplorer.smartcard.SmartCardController;
 import simexplorer.simcardcloner.SIMCardType;
 
-class SimConnectionController {
+public class SimConnectionController {
     private final SmartCardController smartCardController;
     private final HistoryLogger historyLogger;
     private final ApduService apduService;
@@ -18,7 +20,7 @@ class SimConnectionController {
     private SIMCardType simCardType = SIMCardType.Regular;
     private CardChannel cardChannel;
 
-    SimConnectionController(
+    public SimConnectionController(
             SmartCardController smartCardController,
             HistoryLogger historyLogger,
             ApduService apduService,
@@ -30,15 +32,15 @@ class SimConnectionController {
         this.connectionUiStateController = connectionUiStateController;
     }
 
-    SIMCardType getSimCardType() {
+    public SIMCardType getSimCardType() {
         return simCardType;
     }
 
-    void initializeDisconnectedState(FileTreeController fileTreeController) {
+    public void initializeDisconnectedState(FileTreeController fileTreeController) {
         connectionUiStateController.onDisconnected(fileTreeController, simCardType);
     }
 
-    void disconnect(FileTreeController fileTreeController) {
+    public void disconnect(FileTreeController fileTreeController) {
         try {
             historyLogger.addEntry("Disconnected");
             smartCardController.disconnect();
@@ -49,7 +51,7 @@ class SimConnectionController {
         }
     }
 
-    void connectToTerminal(
+    public void connectToTerminal(
             int terminalNumber,
             FileTreeController fileTreeController,
             BooleanSupplier isDisconnectVisible

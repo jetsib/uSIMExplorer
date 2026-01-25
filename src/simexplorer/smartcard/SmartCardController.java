@@ -1,4 +1,4 @@
-package simexplorer;
+package simexplorer.smartcard;
 
 import java.util.List;
 import javax.smartcardio.ATR;
@@ -8,7 +8,7 @@ import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
 import javax.smartcardio.TerminalFactory;
 
-class SmartCardController {
+public class SmartCardController {
     private final TerminalFactory factory;
     private List<CardTerminal> terminals;
     private CardTerminal terminal;
@@ -16,67 +16,67 @@ class SmartCardController {
     private ATR cardATR;
     private CardChannel cardChannel;
 
-    SmartCardController() {
+    public SmartCardController() {
         factory = TerminalFactory.getDefault();
     }
 
-    static class ConnectionResult {
+    public static class ConnectionResult {
         private final CardTerminal terminal;
         private final Card card;
         private final ATR atr;
         private final CardChannel cardChannel;
 
-        ConnectionResult(CardTerminal terminal, Card card, ATR atr, CardChannel cardChannel) {
+        public ConnectionResult(CardTerminal terminal, Card card, ATR atr, CardChannel cardChannel) {
             this.terminal = terminal;
             this.card = card;
             this.atr = atr;
             this.cardChannel = cardChannel;
         }
 
-        CardTerminal getTerminal() {
+        public CardTerminal getTerminal() {
             return terminal;
         }
 
-        Card getCard() {
+        public Card getCard() {
             return card;
         }
 
-        ATR getAtr() {
+        public ATR getAtr() {
             return atr;
         }
 
-        CardChannel getCardChannel() {
+        public CardChannel getCardChannel() {
             return cardChannel;
         }
     }
 
-    List<CardTerminal> listTerminals() throws CardException {
+    public List<CardTerminal> listTerminals() throws CardException {
         terminals = factory.terminals().list();
         return terminals;
     }
 
-    int getTerminalCount() {
+    public int getTerminalCount() {
         return terminals == null ? 0 : terminals.size();
     }
 
-    CardTerminal getTerminal(int index) {
+    public CardTerminal getTerminal(int index) {
         if (terminals == null) {
             return null;
         }
         return terminals.get(index);
     }
 
-    void selectTerminal(int index) {
+    public void selectTerminal(int index) {
         terminal = getTerminal(index);
     }
 
-    ConnectionResult connectToTerminal(int index) throws CardException {
+    public ConnectionResult connectToTerminal(int index) throws CardException {
         selectTerminal(index);
         connect();
         return new ConnectionResult(terminal, card, cardATR, cardChannel);
     }
 
-    Thread startCardPresenceMonitor(Runnable onCardAbsent, Runnable onCardPresent) {
+    public Thread startCardPresenceMonitor(Runnable onCardAbsent, Runnable onCardPresent) {
         Thread monitorThread = new Thread(new Runnable() {
             @Override
             public synchronized void run() {
@@ -95,33 +95,33 @@ class SmartCardController {
         return monitorThread;
     }
 
-    void connect() throws CardException {
+    public void connect() throws CardException {
         card = terminal.connect("T=0");
         cardATR = card.getATR();
         cardChannel = card.getBasicChannel();
     }
 
-    void disconnect() throws CardException {
+    public void disconnect() throws CardException {
         card.disconnect(true);
     }
 
-    boolean isCardPresent() throws CardException {
+    public boolean isCardPresent() throws CardException {
         return terminal.isCardPresent();
     }
 
-    CardTerminal getSelectedTerminal() {
+    public CardTerminal getSelectedTerminal() {
         return terminal;
     }
 
-    ATR getCardAtr() {
+    public ATR getCardAtr() {
         return cardATR;
     }
 
-    CardChannel getCardChannel() {
+    public CardChannel getCardChannel() {
         return cardChannel;
     }
 
-    Card getCard() {
+    public Card getCard() {
         return card;
     }
 }

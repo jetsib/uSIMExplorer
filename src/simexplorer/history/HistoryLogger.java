@@ -1,4 +1,4 @@
-package simexplorer;
+package simexplorer.history;
 
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -6,22 +6,22 @@ import java.awt.datatransfer.StringSelection;
 import javax.swing.DefaultListModel;
 import javax.swing.JList;
 
-class HistoryLogger {
+public class HistoryLogger {
     private final DefaultListModel<String> listModel;
 
-    HistoryLogger(DefaultListModel<String> listModel) {
+    public HistoryLogger(DefaultListModel<String> listModel) {
         this.listModel = listModel;
     }
 
-    DefaultListModel<String> getListModel() {
+    public DefaultListModel<String> getListModel() {
         return listModel;
     }
 
-    void addEntry(String text) {
+    public void addEntry(String text) {
         listModel.addElement(text);
     }
 
-    void copySelectionToClipboard(JList historyList) {
+    public void copySelectionToClipboard(JList historyList) {
         Object selectedValue = historyList.getSelectedValue();
         if (selectedValue == null) {
             return;
@@ -31,7 +31,7 @@ class HistoryLogger {
         cb.setContents(ss, null);
     }
 
-    static String formatBuffer(byte[] buffer) {
+    public static String formatBuffer(byte[] buffer) {
         StringBuilder strBuff = new StringBuilder("");
         for (int i = 0; i < buffer.length; i++) {
             strBuff.append(String.format("%02X ", buffer[i]));

@@ -1,4 +1,4 @@
-package simexplorer;
+package simexplorer.controller;
 
 import javax.swing.JFileChooser;
 import javax.swing.JMenu;
@@ -6,9 +6,12 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
 import javax.swing.JTree;
+import simexplorer.DialogCopia;
+import simexplorer.SIMExplorer;
+import simexplorer.service.ApduService;
 import simexplorer.simcardcloner.SIMCardType;
 
-class ConnectionUiStateController {
+public class ConnectionUiStateController {
     private final JTree treeFiles;
     private final JMenu mnuConectar;
     private final JMenuItem mnuDesconectar;
@@ -19,7 +22,7 @@ class ConnectionUiStateController {
     private final JTextArea edtDadosBrutos;
     private final JTextArea edtDadosDecodificados;
 
-    ConnectionUiStateController(
+    public ConnectionUiStateController(
             JTree treeFiles,
             JMenu mnuConectar,
             JMenuItem mnuDesconectar,
@@ -41,7 +44,7 @@ class ConnectionUiStateController {
         this.edtDadosDecodificados = edtDadosDecodificados;
     }
 
-    SIMCardType onConnected(ApduService apduService, FileTreeController fileTreeController) {
+    public SIMCardType onConnected(ApduService apduService, FileTreeController fileTreeController) {
         treeFiles.setEnabled(true);
         mnuConectar.setVisible(false);
         mnuDesconectar.setVisible(true);
@@ -57,7 +60,7 @@ class ConnectionUiStateController {
         return detectedType;
     }
 
-    void onDisconnected(FileTreeController fileTreeController, SIMCardType simCardType) {
+    public void onDisconnected(FileTreeController fileTreeController, SIMCardType simCardType) {
         mnuDesconectar.setVisible(false);
         mnuConectar.setVisible(true);
         treeFiles.setEnabled(false);
@@ -73,7 +76,7 @@ class ConnectionUiStateController {
         }
     }
 
-    void startCopyFromSimCard(SIMExplorer owner, SIMCardType simCardType) {
+    public void startCopyFromSimCard(SIMExplorer owner, SIMCardType simCardType) {
         new Thread(new Runnable() {
             public void run() {
                 final JFileChooser fc = new JFileChooser();
@@ -100,7 +103,7 @@ class ConnectionUiStateController {
         }).start();
     }
 
-    void startCopyToSimCard(SIMExplorer owner, SIMCardType simCardType) {
+    public void startCopyToSimCard(SIMExplorer owner, SIMCardType simCardType) {
         new Thread(new Runnable() {
             public void run() {
                 final JFileChooser fc = new JFileChooser();

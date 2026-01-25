@@ -1,4 +1,4 @@
-package simexplorer;
+package simexplorer.controller;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -9,15 +9,16 @@ import javax.smartcardio.CardTerminal;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import simexplorer.smartcard.SmartCardController;
 
-class TerminalMenuController {
+public class TerminalMenuController {
     private final SmartCardController smartCardController;
 
-    TerminalMenuController(SmartCardController smartCardController) {
+    public TerminalMenuController(SmartCardController smartCardController) {
         this.smartCardController = smartCardController;
     }
 
-    void populateMenu(JMenu menu, IntConsumer onTerminalSelected) {
+    public void populateMenu(JMenu menu, IntConsumer onTerminalSelected) {
         List<CardTerminal> terminals = null;
         try {
             terminals = smartCardController.listTerminals();
