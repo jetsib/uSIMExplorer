@@ -26,10 +26,6 @@
 package simexplorer;
 
 import simexplorer.apdusender.APDUSender;
-import simexplorer.efTools.FileTreeDef;
-import simexplorer.files.File;
-import simexplorer.files.EF;
-import simexplorer.files.DF;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
@@ -43,12 +39,8 @@ import javax.smartcardio.CardTerminal;
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
 import javax.smartcardio.TerminalFactory;
-import javax.swing.DefaultListModel;
-import javax.swing.JFileChooser;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
+import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import simexplorer.decoders.DecodeSMS;
@@ -81,13 +73,12 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
     
     private Thread threadWaitForCardAbsent = null;
     
-    private File lastFile = null;
-    
     private SIMCardType simCardType = SIMCardType.Regular;
-    private javax.swing.tree.DefaultMutableTreeNode treeDF_ADMIN = null;    
+    private FileTreeController fileTreeController;
+    private FileEditorController fileEditorController;
     
     
-    private DefaultListModel<String> listModel = new DefaultListModel<>();
+    private final HistoryLogger historyLogger = new HistoryLogger(new DefaultListModel<String>());
 
     private static byte CURRENT_CLA = (byte)0xA0;
     
@@ -98,10 +89,12 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
         initComponents();
         
         DecodeSMS.setShowTimeZone(chkMostraFuso.isSelected());
+
+        fileEditorController = new FileEditorController(this, edtDadosBrutos, edtDadosDecodificados);
         
         desconectando();
 
-        lstHistoria.setModel(listModel);
+        lstHistoria.setModel(historyLogger.getListModel());
 
         //Adquire Fabrica de Leitores  
         factory = TerminalFactory.getDefault();         
@@ -132,57 +125,27 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
         }
     }
 
-    private static String formatBuffer(byte[] buffer)  
-    {  
-        StringBuilder strBuff = new StringBuilder("");  
-        for (int i = 0; i < buffer.length; i++) {  
-            strBuff.append(String.format("%02X ", buffer[i]));  
-        }  
-        return strBuff.toString();  
-    }  
-    
     @Override
     public byte[] enviarAPDU(byte[] c)
     {
         c[0] = CURRENT_CLA;
         commandAPDU = new CommandAPDU( c );
-        adicionarHistoria("S:" + formatBuffer(c));
+        adicionarHistoria("S:" + HistoryLogger.formatBuffer(c));
         try {  
             responseAPDU = cardChannel.transmit(commandAPDU);
         } catch (CardException ex) {
             adicionarHistoria("Err: " + ex.getMessage());
         }
-        adicionarHistoria("R:" + formatBuffer(responseAPDU.getBytes()));
+        adicionarHistoria("R:" + HistoryLogger.formatBuffer(responseAPDU.getBytes()));
         return responseAPDU.getBytes();
         
     }
 
     private void initTreeFiles() {
-        DefaultMutableTreeNode root = new DefaultMutableTreeNode("root");
-        DefaultMutableTreeNode mf   = new DefaultMutableTreeNode(FileTreeDef.MF);
-        root.add(mf);
-
-        mf.add(new DefaultMutableTreeNode(FileTreeDef.ICCID));
-
-        DefaultMutableTreeNode telecom = new DefaultMutableTreeNode(FileTreeDef.TELECOM);
-        for (Object ef : FileTreeDef.TELECOM_EF)
-            telecom.add(new DefaultMutableTreeNode(ef));
-        mf.add(telecom);
-
-        DefaultMutableTreeNode gsm = new DefaultMutableTreeNode(FileTreeDef.DF_GSM);
-        for (Object ef : FileTreeDef.GSM_EF)
-            gsm.add(new DefaultMutableTreeNode(ef));
-        mf.add(gsm);
-
-        DefaultMutableTreeNode usim = new DefaultMutableTreeNode(FileTreeDef.ADF_USIM);
-        for (Object ef : FileTreeDef.USIM_EF)
-            usim.add(new DefaultMutableTreeNode(ef));
-        mf.add(usim);
-
-        treeFiles.setModel(new DefaultTreeModel(root));
-        treeFiles.setComponentPopupMenu(mnuTreeFiles);
-        treeFiles.setEnabled(false);
-        treeFiles.setRootVisible(false);
+        if (fileTreeController == null) {
+            fileTreeController = new FileTreeController(treeFiles, mnuTreeFiles);
+        }
+        fileTreeController.initTreeFiles();
     }
 
     /**
@@ -451,7 +414,7 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
                 pais[i] = node.getPath()[treeFiles.isRootVisible()?i:i+1].toString();
             }
 
-            atualizarEdtEF(node.toString(), pais);
+            fileEditorController.updateEf(node.toString(), pais);
 
         }
         else
@@ -464,7 +427,7 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
                 pais[i] = node.getPath()[treeFiles.isRootVisible()?i:i+1].toString();
             }
 
-            atualizarEdtDF(node.toString(), pais);
+            fileEditorController.updateDf(node.toString(), pais);
 
 
         }
@@ -503,82 +466,7 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
     }//GEN-LAST:event_mnuTreeFilesPopupMenuWillBecomeVisible
 
     private void mnuEditarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuEditarActionPerformed
-        if(lastFile.getClass() == EF.class )
-        {
-            EF ef = (EF)lastFile;
-            if(ef.getStructureOfFile() == EF.StructureOfFile.Transparent)
-            {
-                DialogEditar dlgEditar = new DialogEditar(this, true);
-                dlgEditar.txtEdicao.setText(ef.getContentsTransparentAsString());
-                dlgEditar.setTitle("Edit " + ef.getNome());
-                dlgEditar.setVisible(true);
-                if(dlgEditar.getPressionouOK())
-                {
-                    try                    
-                    {
-                        ef.updateBinary(dlgEditar.txtEdicao.getText());
-                        atualizarEdtEF(lastFile.getNome(), lastFile.getPais());
-                    }
-                    catch(EF.UpdateBinaryException ex)
-                    {
-                        JOptionPane.showMessageDialog(null, ex.getMessage());
-                    }
-                        
-                }
-            }
-            else if(ef.getStructureOfFile() == EF.StructureOfFile.LinearFixed)
-            {
-                
-                DialogNumReg dlgNumReg = new DialogNumReg(this, true, ef.getNumRegs());
-                dlgNumReg.setVisible(true);
-                if(dlgNumReg.getPressionouOK())
-                {
-                    DialogEditar dlgEditar = new DialogEditar(this, true);
-                    dlgEditar.txtEdicao.setText(ef.getContentsLinearCyclicAsString(dlgNumReg.getNumReg()-1));
-                    dlgEditar.setTitle("Edit " + ef.getNome() + "; register " + dlgNumReg.getNumReg());
-                    dlgEditar.setVisible(true);
-                    if(dlgEditar.getPressionouOK())
-                    {
-                    try                    
-                    {
-                        ef.updateRecord(dlgEditar.txtEdicao.getText(), dlgNumReg.getNumReg());
-                        atualizarEdtEF(lastFile.getNome(), lastFile.getPais());
-                    }
-                    catch(EF.UpdateRecordException ex)
-                    {
-                        JOptionPane.showMessageDialog(null, ex.getMessage());
-                    }
-                    }
-                            
-                
-                    
-                }
-                
-            }
-        
-            else if(ef.getStructureOfFile() == EF.StructureOfFile.Cyclic )
-            {
-                DialogEditar dlgEditar = new DialogEditar(this, true);
-                dlgEditar.txtEdicao.setText(ef.getContentsLinearCyclicAsString(0));
-                dlgEditar.setTitle("New register: " + ef.getNome());
-                dlgEditar.setVisible(true);
-                if(dlgEditar.getPressionouOK())
-                {
-                    try                    
-                    {
-                        ef.updateRecord(dlgEditar.txtEdicao.getText(), 0);
-                        atualizarEdtEF(lastFile.getNome(), lastFile.getPais());
-                    }
-                    catch(EF.UpdateRecordException ex)
-                    {
-                        JOptionPane.showMessageDialog(null, ex.getMessage());
-                    }
-                        
-                }
-            
-            
-            }
-        }
+        fileEditorController.editLastFile();
     }//GEN-LAST:event_mnuEditarActionPerformed
 
     private void mnuCriarRelatorioActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuCriarRelatorioActionPerformed
@@ -757,8 +645,7 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
             removerMagicSimFiles();
             
         }
-            
-        
+
     }
     
     private void mnuItemConectarActionPerformed(java.awt.event.ActionEvent evt) {                                                
@@ -780,12 +667,10 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
         //Adquire ATR do Cartão
         cardATR = card.getATR();
         byte[] buffer = cardATR.getBytes();
-        adicionarHistoria("ATR : "  + formatBuffer(buffer));
+        adicionarHistoria("ATR : "  + HistoryLogger.formatBuffer(buffer));
 
         //Adquire Canal de Comunicação
         cardChannel = card.getBasicChannel();
-        
-        
         
         conectando();
 
@@ -813,10 +698,7 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
             threadWaitForCardAbsent.start();
         }
         
-    }                                               
-
-
-    
+    }
     
     /**
      * @param args the command line arguments
@@ -845,10 +727,6 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
         }
         //</editor-fold>
 
-
-
-
-        
         
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
@@ -893,58 +771,7 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
 
     private void adicionarHistoria(String txtTexto)
     {
-        listModel.addElement(txtTexto);
-    }
-
-    private void atualizarEdtEF(String nome, String[] pais) {
-        try
-        {
-            EF ef = new EF(this, nome, pais);
-            lastFile = ef;
-            edtDadosBrutos.setText(ef.toString());
-            edtDadosDecodificados.setText(ef.dadosDecodificados());
-        }
-        catch(SIMFileNotFoundException ex)
-        {
-            edtDadosBrutos.setText(ex.getMessage());
-            edtDadosDecodificados.setText(ex.getMessage());
-            lastFile = null;
-        }
-        finally
-        {
-
-            edtDadosBrutos.setSelectionStart(0);
-            edtDadosBrutos.setSelectionEnd(0);
-            edtDadosDecodificados.setSelectionStart(0);
-            edtDadosDecodificados.setSelectionEnd(0);
-        }
-        
-    }
-
-    private void atualizarEdtDF(String nome, String[] pais) {
-        try
-        {
-            DF df = new DF(this, nome, pais);
-            lastFile = df;
-            edtDadosBrutos.setText(df.toString());
-        }
-        catch(SIMFileNotFoundException ex)
-        {
-            edtDadosBrutos.setText(ex.getMessage());
-            lastFile = null;
-
-
-        }
-        finally
-        {
-
-            edtDadosBrutos.setSelectionStart(0);
-            edtDadosBrutos.setSelectionEnd(0);
-            edtDadosDecodificados.setSelectionStart(0);
-            edtDadosDecodificados.setSelectionEnd(0);
-        }
-            
-            
+        historyLogger.addEntry(txtTexto);
     }
 
     private boolean is6E00(byte[] r)
@@ -985,34 +812,11 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
     }
 
     private void adicionarMagicSimFiles() {
-
-        javax.swing.tree.DefaultMutableTreeNode treeRoot;
-        javax.swing.tree.DefaultMutableTreeNode treeNode3;
-        treeDF_ADMIN = new javax.swing.tree.DefaultMutableTreeNode("DF.ADMIN");
-        treeNode3 = new javax.swing.tree.DefaultMutableTreeNode("EF.OPN");
-        treeDF_ADMIN.add(treeNode3);
-        treeNode3 = new javax.swing.tree.DefaultMutableTreeNode("EF 8f 0d");
-        treeDF_ADMIN.add(treeNode3);
-        treeNode3 = new javax.swing.tree.DefaultMutableTreeNode("EF 8f 0e");
-        treeDF_ADMIN.add(treeNode3);
-        treeRoot = ((javax.swing.tree.DefaultMutableTreeNode) treeFiles.getModel().getRoot());
-        treeRoot.add(treeDF_ADMIN);
-        treeFiles.setModel(new javax.swing.tree.DefaultTreeModel(treeRoot));    
-    
+        fileTreeController.addMagicSimFiles();
     }
 
     private void removerMagicSimFiles() {
-        javax.swing.tree.DefaultMutableTreeNode treeRoot = ((javax.swing.tree.DefaultMutableTreeNode) treeFiles.getModel().getRoot());
-        try
-        {
-            treeRoot.remove(treeDF_ADMIN);
-        }
-        catch(Exception e)
-        {
-                    
-        }
-        treeFiles.setModel(new javax.swing.tree.DefaultTreeModel(treeRoot));    
-
+        fileTreeController.removeMagicSimFiles();
     }
 
 
