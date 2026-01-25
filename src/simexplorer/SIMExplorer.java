@@ -27,17 +27,12 @@ package simexplorer;
 
 import simexplorer.apdusender.APDUSender;
 import simexplorer.reportgenerator.ReportGenerator;
-import java.util.List;
-import javax.smartcardio.CardChannel;
-import javax.smartcardio.CardException;
-import javax.smartcardio.CardTerminal;
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import simexplorer.decoders.DecodeSMS;
 import simexplorer.decoders.SIMFileNotFoundException;
-import simexplorer.simcardcloner.SIMCardType;
 
 /**
  *
@@ -49,15 +44,13 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
     private final HistoryLogger historyLogger = new HistoryLogger(new DefaultListModel<String>());
 
     //Canal de Comunicação com o Smart Card  
-    CardChannel cardChannel;  
     private final ApduService apduService = new ApduService(historyLogger);
     
-    private Thread threadWaitForCardAbsent = null;
-    
-    private SIMCardType simCardType = SIMCardType.Regular;
     private FileTreeController fileTreeController;
     private FileEditorController fileEditorController;
     private ConnectionUiStateController connectionUiStateController;
+    private SimConnectionController simConnectionController;
+    private TerminalMenuController terminalMenuController;
     
     /**
      * Creates new form SIMExplorer
@@ -79,36 +72,24 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
                 edtDadosBrutos,
                 edtDadosDecodificados
         );
+        simConnectionController = new SimConnectionController(
+                smartCardController,
+                historyLogger,
+                apduService,
+                connectionUiStateController
+        );
+        terminalMenuController = new TerminalMenuController(smartCardController);
         
-        desconectando();
+        simConnectionController.initializeDisconnectedState(fileTreeController);
 
         lstHistoria.setModel(historyLogger.getListModel());
-
-        List<CardTerminal> terminals = null;
-        try {
-            //Adquire Lista de Leitores PC/SC no Sistema
-            terminals = smartCardController.listTerminals();
-        } catch (CardException ex) {
-            JOptionPane.showMessageDialog(null, ex, null, 0);
-        }
-        System.out.println("List : " + terminals);  
-
-        for(int i=0;i<smartCardController.getTerminalCount();i++)
-        {
-            CardTerminal terminal = smartCardController.getTerminal(i);
-            MenuItemTerminal mnuItemConectar = new MenuItemTerminal(terminal.getName());
-            mnuItemConectar.terminal_number = i;
-                   
-            
-            mnuItemConectar.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                mnuItemConectarActionPerformed(evt);
-            }
-            
-            });
-            
-            mnuConectar.add(mnuItemConectar);    
-        }
+        terminalMenuController.populateMenu(mnuConectar, (terminalNumber) -> {
+            simConnectionController.connectToTerminal(
+                    terminalNumber,
+                    fileTreeController,
+                    () -> mnuDesconectar.isVisible()
+            );
+        });
     }
 
     @Override
@@ -420,18 +401,7 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
     }//GEN-LAST:event_mnuCriarRelatorioActionPerformed
 
     private void mnuDesconectarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuDesconectarActionPerformed
-        
-        try {
-            historyLogger.addEntry("Disconnected");
-            smartCardController.disconnect();
-            if (smartCardController.isCardPresent()) desconectando();
-        } catch (CardException ex) {
-            
-        }
-        
-        
-        
-        
+        simConnectionController.disconnect(fileTreeController);
     }//GEN-LAST:event_mnuDesconectarActionPerformed
 
     private void mnuLstHistoriaCopiarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuLstHistoriaCopiarActionPerformed
@@ -454,13 +424,13 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
     }//GEN-LAST:event_mnuSobreActionPerformed
 
     private void mnuSIMCardParaArquivoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuSIMCardParaArquivoActionPerformed
-        connectionUiStateController.startCopyFromSimCard(this, simCardType);
+        connectionUiStateController.startCopyFromSimCard(this, simConnectionController.getSimCardType());
     }//GEN-LAST:event_mnuSIMCardParaArquivoActionPerformed
 
     private void mnuArquivoParaSimCardActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuArquivoParaSimCardActionPerformed
 
         
-        connectionUiStateController.startCopyToSimCard(this, simCardType);
+        connectionUiStateController.startCopyToSimCard(this, simConnectionController.getSimCardType());
         
 
     }//GEN-LAST:event_mnuArquivoParaSimCardActionPerformed
@@ -469,61 +439,6 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
         DecodeSMS.setShowTimeZone(chkMostraFuso.isSelected());
     }//GEN-LAST:event_chkMostraFusoActionPerformed
 
-    private void conectando()
-    {
-        this.simCardType = connectionUiStateController.onConnected(apduService, fileTreeController);
-    }
-    
-    private void desconectando()
-    {
-        connectionUiStateController.onDisconnected(fileTreeController, simCardType);
-    }
-    
-    private void mnuItemConectarActionPerformed(java.awt.event.ActionEvent evt) {                                                
-
-        MenuItemTerminal mnuItemConectar = (MenuItemTerminal) evt.getSource();
-
-        try {
-            //Estabelece Conexão com o Cartão na Leitora
-            SmartCardController.ConnectionResult connectionResult = smartCardController.connectToTerminal(mnuItemConectar.terminal_number);
-            CardTerminal terminal = connectionResult.getTerminal();
-            historyLogger.addEntry("Selected terminal: " + terminal.getName());
-            historyLogger.addEntry("Connected");
-            System.out.println("card: " + connectionResult.getCard());
-            //Adquire ATR do Cartão
-            byte[] buffer = connectionResult.getAtr().getBytes();
-            historyLogger.addEntry("ATR : "  + HistoryLogger.formatBuffer(buffer));
-            //Adquire Canal de Comunicação
-            cardChannel = connectionResult.getCardChannel();
-            apduService.setCardChannel(cardChannel);
-        } catch (CardException ex) {
-            JOptionPane.showMessageDialog(null, ex.toString(), "Err", 0, null);
-            return;
-        }
-        
-        conectando();
-
-        if(threadWaitForCardAbsent == null)
-        {
-            threadWaitForCardAbsent = smartCardController.startCardPresenceMonitor(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            if (mnuDesconectar.isVisible()) {
-                                historyLogger.addEntry("Disconnected");
-                            }
-                            desconectando();
-                        }
-                    },
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                        }
-                    }
-            );
-        }
-        
-    }
     
     /**
      * @param args the command line arguments
@@ -594,13 +509,5 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
     private javax.swing.JTree treeFiles;
     // End of variables declaration//GEN-END:variables
 
-    private class MenuItemTerminal extends JMenuItem
-    {
-        int terminal_number;
-
-        private MenuItemTerminal(String name) {
-            super(name);
-        }
-    }
-       
+      
 }
