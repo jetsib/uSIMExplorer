@@ -37,10 +37,10 @@ public abstract class File {
 
     protected byte[] resposta;
     final protected byte[] fileID;
-    final protected TypeOfFile typeOfFile;
     final protected String nome;
     final protected String[] pais;
-   
+
+    public TypeOfFile typeOfFile=TypeOfFile.INVALID;
     private Boolean naoEncontrado(byte[] resposta)
     {
         return (resposta.length == 2) && resposta[0] == (byte)0x94 && resposta[1] == (byte)0x04;
@@ -50,7 +50,7 @@ public abstract class File {
         String apduHex =
                 fileID.length == 2
                         ? "A0A4000002"
-                        : "A0A40400" + HexUtil.itoa(fileID.length, 2);
+                        : "A0A40400" + HexUtil.itoa(fileID.length, 1);
 
         apduHex += HexUtil.byteArrayToHexString(fileID);
         return HexUtil.hexStringToByteArray(apduHex);
@@ -79,24 +79,12 @@ public abstract class File {
         if(resposta != null && resposta.length == 2 && (resposta[0] == (byte)0x9F || resposta[0] == (byte)0x61)) {
             resposta = apduSender.enviarAPDU(new byte[]{(byte)0xA0, (byte)0xC0, 0x00, 0x00, resposta[1]});
         }
-
-        switch(resposta[6])
-        {
-            case 1: typeOfFile = TypeOfFile.MF; break;
-            case 2: typeOfFile = TypeOfFile.DF; break;
-            case 4: typeOfFile = TypeOfFile.EF; break;
-            default: typeOfFile = TypeOfFile.INVALID;
-        }
     }
     
     public byte[] getFileID(){
         return fileID;
     }
-    
-    public TypeOfFile getTypeOfFile(){
-        return typeOfFile;
-    }
-    
+
     public String getNome()
     {
         return nome;

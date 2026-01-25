@@ -63,6 +63,7 @@ public class EF extends File {
         this.apduSender = apduSender;
 
         FcpParser.Result fcp = FcpParser.parseSelectResponse(resposta);
+        typeOfFile=fcp.typeOfFile;
 
         fileSize = (char) (fcp.fileSize & 0xFFFF);
         structureOfFile = fcp.structureOfFile;
@@ -188,8 +189,8 @@ public class EF extends File {
         sb.append("\nType of file: " + typeOfFile);
         sb.append("\nInvalidated: " + invalidated);
         sb.append("\nReadable and updatable when invalidated: " + readableAndUpdatableWhenInvalidated);
-        sb.append("\nStructured of file: " + structureOfFile);
-        sb.append("\nIncrease command allowed " + increaseCommandAllowed);
+        sb.append("\nStructure of file: " + structureOfFile);
+        sb.append("\nIncrease command allowed: " + increaseCommandAllowed);
         sb.append("\nIncrease access conditions:" + increaseAccessConditions);
         sb.append("\nRead/Seek access conditions:" + readSeekAccessConditions);
         sb.append("\nUpdate access conditions:" + updateAccessConditions);

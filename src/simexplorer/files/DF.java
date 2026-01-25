@@ -26,6 +26,7 @@ package simexplorer.files;
 
 import simexplorer.apdusender.APDUSender;
 import simexplorer.decoders.SIMFileNotFoundException;
+import simexplorer.decoders.utils.FcpParser;
 
 /**
  *
@@ -58,23 +59,18 @@ public class DF extends File{
     private final boolean isUnblockCHVIBlocked;
     private final boolean isCHV2Blocked;
     private final boolean isUnblockCHV2Blocked;
-    
-    
-    
+
     public DF(APDUSender apduSender, String nome, String[] pais) throws SIMFileNotFoundException {
         super(apduSender, nome, pais);
-        
-        byte chv1Status = this.resposta[18];
-        isCHV1Blocked = (chv1Status & 0xF)==0;
-        byte fileCharac = this.resposta[13];
-        isCHV1Enabled = !((byte)(fileCharac & 0x80) == (byte)0x80);
-        byte puk1Status = this.resposta[19];
-        isUnblockCHVIBlocked = ((puk1Status & 0xF)==0);
-        byte chv2Status = this.resposta[20];
-        isCHV2Blocked = (chv2Status & 0xF)==0;
-        byte puk2Status = this.resposta[21];
-        isUnblockCHV2Blocked = (puk2Status & 0xF)==0;
 
+        FcpParser.Result fcp = FcpParser.parseSelectResponse(resposta);
+        typeOfFile = fcp.typeOfFile;
+
+        isCHV1Blocked = fcp.isCHV1Blocked;
+        isCHV1Enabled = fcp.isCHV1Enabled;
+        isUnblockCHVIBlocked = fcp.isUnblockCHV1Blocked;
+        isCHV2Blocked = fcp.isCHV2Blocked;
+        isUnblockCHV2Blocked = fcp.isUnblockCHV2Blocked;
     }
     
     public String getCHVInfo()
