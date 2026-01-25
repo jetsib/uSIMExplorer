@@ -83,7 +83,10 @@ public class DecodeEFFactory {
         {
             return new DecodePLMNwAcT();
         }
-
+        if(effile.trim().toUpperCase().equals("UST"))
+        {
+            return new DecodeUST();
+        }
         return null;
     }
 }

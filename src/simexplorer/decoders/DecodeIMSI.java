@@ -24,27 +24,38 @@
 
 package simexplorer.decoders;
 
-/**
- *
- * @author Gustavo Vieira Rocha Rabelo <gustavo.vrr@gmail.com>
- */
-public class DecodeIMSI implements DecodeEF{
-
+public class DecodeIMSI implements DecodeEF {
 
     @Override
     public String decode(byte[] bytes) {
-        int size = bytes[0];
-        String imsi = "";
-        
-        imsi += String.format("%01X", 0xF&(bytes[1]>>4));
-        for(int i=1;i<size;i++)
-        {
-            imsi += String.format("%01X", 0xF&(bytes[i+1])) ;
-            imsi += String.format("%01X", 0xF&(bytes[i+1]>>4))  ;
+        if (bytes == null || bytes.length < 2) return "Invalid IMSI";
+
+        int size = bytes[0] & 0xFF;
+        if (size <= 0) return "Invalid IMSI";
+
+        if (bytes.length < size + 1) return "Invalid IMSI";
+
+        StringBuilder imsi = new StringBuilder();
+
+        imsi.append(String.format("%01X", (bytes[1] >> 4) & 0x0F));
+
+        for (int i = 1; i < size; i++) {
+            imsi.append(String.format("%01X", bytes[i + 1] & 0x0F));
+            imsi.append(String.format("%01X", (bytes[i + 1] >> 4) & 0x0F));
         }
-        
-        return imsi;
-        
+
+        String imsiStr = imsi.toString();
+
+        if (imsiStr.length() < 5) return imsiStr;
+
+        String mcc = imsiStr.substring(0, 3);
+        String mnc2 = imsiStr.substring(3, 5);
+        String mnc3 = imsiStr.length() >= 6 ? imsiStr.substring(3, 6) : null;
+
+        if (mnc3 != null) {
+            return "IMSI: " + imsiStr + " (MCC=" + mcc + ", MNC=" + mnc2 + "/" + mnc3 + ")";
+        }
+        return "IMSI: " + imsiStr + " (MCC=" + mcc + ", MNC=" + mnc2 + ")";
     }
-    
 }
+
