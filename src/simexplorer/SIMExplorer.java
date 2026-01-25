@@ -34,8 +34,6 @@ import java.util.List;
 import javax.smartcardio.CardChannel;
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
-import javax.smartcardio.CommandAPDU;
-import javax.smartcardio.ResponseAPDU;
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.xml.parsers.ParserConfigurationException;
@@ -51,13 +49,11 @@ import simexplorer.simcardcloner.SIMCardType;
 public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
     private final SmartCardController smartCardController = new SmartCardController();
 
+    private final HistoryLogger historyLogger = new HistoryLogger(new DefaultListModel<String>());
+
     //Canal de Comunicação com o Smart Card  
     CardChannel cardChannel;  
-    //APDU de Comando  
-    CommandAPDU commandAPDU;  
-    //APDU de Resposta  
-    ResponseAPDU responseAPDU;  
-    //Buffer de Auxilio  
+    private final ApduService apduService = new ApduService(historyLogger);
     
     private Thread threadWaitForCardAbsent = null;
     
@@ -67,8 +63,6 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
     private ConnectionUiStateController connectionUiStateController;
     
     
-    private final HistoryLogger historyLogger = new HistoryLogger(new DefaultListModel<String>());
-
     private static byte CURRENT_CLA = (byte)0xA0;
     
     /**
@@ -126,17 +120,7 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
     @Override
     public byte[] enviarAPDU(byte[] c)
     {
-        c[0] = CURRENT_CLA;
-        commandAPDU = new CommandAPDU( c );
-        adicionarHistoria("S:" + HistoryLogger.formatBuffer(c));
-        try {  
-            responseAPDU = cardChannel.transmit(commandAPDU);
-        } catch (CardException ex) {
-            adicionarHistoria("Err: " + ex.getMessage());
-        }
-        adicionarHistoria("R:" + HistoryLogger.formatBuffer(responseAPDU.getBytes()));
-        return responseAPDU.getBytes();
-        
+        return apduService.enviarAPDU(c, CURRENT_CLA);
     }
 
     private void initTreeFiles() {
@@ -654,6 +638,7 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
 
         //Adquire Canal de Comunicação
         cardChannel = smartCardController.getCardChannel();
+        apduService.setCardChannel(cardChannel);
         
         conectando();
 
