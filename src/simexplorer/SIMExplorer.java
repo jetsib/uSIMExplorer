@@ -43,7 +43,10 @@ import javax.smartcardio.CardTerminal;
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
 import javax.smartcardio.TerminalFactory;
-import javax.swing.*;
+import javax.swing.DefaultListModel;
+import javax.swing.JFileChooser;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.xml.parsers.ParserConfigurationException;
@@ -84,7 +87,7 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
     private javax.swing.tree.DefaultMutableTreeNode treeDF_ADMIN = null;    
     
     
-    private final HistoryLogger historyLogger = new HistoryLogger(new DefaultListModel<String>());
+    private DefaultListModel<String> listModel = new DefaultListModel<>();
 
     private static byte CURRENT_CLA = (byte)0xA0;
     
@@ -98,7 +101,7 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
         
         desconectando();
 
-        lstHistoria.setModel(historyLogger.getListModel());
+        lstHistoria.setModel(listModel);
 
         //Adquire Fabrica de Leitores  
         factory = TerminalFactory.getDefault();         
@@ -129,18 +132,27 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
         }
     }
 
+    private static String formatBuffer(byte[] buffer)  
+    {  
+        StringBuilder strBuff = new StringBuilder("");  
+        for (int i = 0; i < buffer.length; i++) {  
+            strBuff.append(String.format("%02X ", buffer[i]));  
+        }  
+        return strBuff.toString();  
+    }  
+    
     @Override
     public byte[] enviarAPDU(byte[] c)
     {
         c[0] = CURRENT_CLA;
         commandAPDU = new CommandAPDU( c );
-        adicionarHistoria("S:" + HistoryLogger.formatBuffer(c));
+        adicionarHistoria("S:" + formatBuffer(c));
         try {  
             responseAPDU = cardChannel.transmit(commandAPDU);
         } catch (CardException ex) {
             adicionarHistoria("Err: " + ex.getMessage());
         }
-        adicionarHistoria("R:" + HistoryLogger.formatBuffer(responseAPDU.getBytes()));
+        adicionarHistoria("R:" + formatBuffer(responseAPDU.getBytes()));
         return responseAPDU.getBytes();
         
     }
@@ -768,7 +780,7 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
         //Adquire ATR do Cartão
         cardATR = card.getATR();
         byte[] buffer = cardATR.getBytes();
-        adicionarHistoria("ATR : "  + HistoryLogger.formatBuffer(buffer));
+        adicionarHistoria("ATR : "  + formatBuffer(buffer));
 
         //Adquire Canal de Comunicação
         cardChannel = card.getBasicChannel();
@@ -881,7 +893,7 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
 
     private void adicionarHistoria(String txtTexto)
     {
-        historyLogger.addEntry(txtTexto);
+        listModel.addElement(txtTexto);
     }
 
     private void atualizarEdtEF(String nome, String[] pais) {
