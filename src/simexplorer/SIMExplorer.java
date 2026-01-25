@@ -62,9 +62,6 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
     private FileEditorController fileEditorController;
     private ConnectionUiStateController connectionUiStateController;
     
-    
-    private static byte CURRENT_CLA = (byte)0xA0;
-    
     /**
      * Creates new form SIMExplorer
      */
@@ -120,7 +117,7 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
     @Override
     public byte[] enviarAPDU(byte[] c)
     {
-        return apduService.enviarAPDU(c, CURRENT_CLA);
+        return apduService.enviarAPDU(c);
     }
 
     private void initTreeFiles() {
@@ -380,43 +377,10 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
 
     private void treeFilesValueChanged(javax.swing.event.TreeSelectionEvent evt) {//GEN-FIRST:event_treeFilesValueChanged
 
-        edtDadosBrutos.setText("");
-        edtDadosDecodificados.setText("");
-
         DefaultMutableTreeNode node = (DefaultMutableTreeNode) treeFiles.getLastSelectedPathComponent(); 
-        if (node == null)
+        if (!fileEditorController.updateForSelection(node, treeFiles.isRootVisible())) {
             return;
-
-        if(node.getChildCount() == 0)
-        {
-            //EF
-            String pais[] = new String[treeFiles.isRootVisible()?node.getLevel():node.getLevel()-1];
-            for(int i=0; i<pais.length;i++)
-            {
-                pais[i] = node.getPath()[treeFiles.isRootVisible()?i:i+1].toString();
-            }
-
-            fileEditorController.updateEf(node.toString(), pais);
-
         }
-        else
-        {
-            //DF
-
-            String pais[] = new String[treeFiles.isRootVisible()?node.getLevel():node.getLevel()-1];
-            for(int i=0; i<pais.length;i++)
-            {
-                pais[i] = node.getPath()[treeFiles.isRootVisible()?i:i+1].toString();
-            }
-
-            fileEditorController.updateDf(node.toString(), pais);
-
-
-        }
-        edtDadosBrutos.setSelectionStart(0);
-        edtDadosBrutos.setSelectionEnd(0);
-        edtDadosDecodificados.setSelectionStart(0);
-        edtDadosDecodificados.setSelectionEnd(0);
     
         lstHistoria.ensureIndexIsVisible(lstHistoria.getModel().getSize()-1);
         
@@ -478,7 +442,7 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
     private void mnuDesconectarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_mnuDesconectarActionPerformed
         
         try {
-            adicionarHistoria("Disconnected");
+            historyLogger.addEntry("Disconnected");
             smartCardController.disconnect();
             if (smartCardController.isCardPresent()) desconectando();
         } catch (CardException ex) {
@@ -594,10 +558,10 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
     {
         connectionUiStateController.onConnected();
         
-        this.simCardType = detectSIMCardType();
+        this.simCardType = apduService.detectSimCardType();
         if(this.simCardType == SIMCardType.MagicSIM)
         {
-            adicionarMagicSimFiles();
+            fileTreeController.addMagicSimFiles();
             JOptionPane.showMessageDialog(null, "MagicSim detected!");
         }
 
@@ -609,7 +573,7 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
         
         if(this.simCardType == SIMCardType.MagicSIM)
         {
-            removerMagicSimFiles();
+            fileTreeController.removeMagicSimFiles();
             
         }
 
@@ -623,9 +587,9 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
             //Estabelece Conexão com o Cartão na Leitora
             smartCardController.selectTerminal(mnuItemConectar.terminal_number);
             CardTerminal terminal = smartCardController.getSelectedTerminal();
-            adicionarHistoria("Selected terminal: " + terminal.getName());
+            historyLogger.addEntry("Selected terminal: " + terminal.getName());
             smartCardController.connect();
-            adicionarHistoria("Connected");
+            historyLogger.addEntry("Connected");
         } catch (CardException ex) {
             JOptionPane.showMessageDialog(null, ex.toString(), "Err", 0, null);
             return;
@@ -634,7 +598,7 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
 
         //Adquire ATR do Cartão
         byte[] buffer = smartCardController.getCardAtr().getBytes();
-        adicionarHistoria("ATR : "  + HistoryLogger.formatBuffer(buffer));
+        historyLogger.addEntry("ATR : "  + HistoryLogger.formatBuffer(buffer));
 
         //Adquire Canal de Comunicação
         cardChannel = smartCardController.getCardChannel();
@@ -653,7 +617,7 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
                         try {
                     
                             smartCardController.getSelectedTerminal().waitForCardAbsent(0);
-                            if(mnuDesconectar.isVisible()) adicionarHistoria("Disconnected");
+                            if(mnuDesconectar.isVisible()) historyLogger.addEntry("Disconnected");
                             desconectando();
                             smartCardController.getSelectedTerminal().waitForCardPresent(0);
                         
@@ -736,57 +700,6 @@ public class SIMExplorer extends javax.swing.JFrame implements APDUSender {
     private javax.swing.JPopupMenu mnuTreeFiles;
     private javax.swing.JTree treeFiles;
     // End of variables declaration//GEN-END:variables
-
-    private void adicionarHistoria(String txtTexto)
-    {
-        historyLogger.addEntry(txtTexto);
-    }
-
-    private boolean is6E00(byte[] r)
-    {
-        return r != null && r.length >= 2 &&
-                r[r.length-2] == (byte)0x6E &&
-                r[r.length-1] == (byte)0x00;
-    }
-
-    private boolean supportsUSIM() {
-        CURRENT_CLA=0x00;
-        byte[] r = enviarAPDU(new byte[]{
-                CURRENT_CLA, (byte)0xA4, (byte)0x04, (byte)0x00, (byte)0x07,
-                (byte)0xA0, 0x00, 0x00, 0x00, (byte)0x87, 0x10, 0x02
-        });
-
-        if (r.length < 2) return false;
-        byte sw1 = r[r.length - 2];
-        return sw1 == (byte)0x90 || sw1 == (byte)0x61 || sw1 == (byte)0x9F;
-    }
-
-    private SIMCardType detectSIMCardType() {
-        if (supportsUSIM()) {
-            return SIMCardType.USIM;
-        }
-        CURRENT_CLA= (byte) 0xA0;
-        byte response[] = this.enviarAPDU(new byte[]{CURRENT_CLA, (byte)0xa4, (byte)0x00, (byte)0x00, (byte)0x02, (byte)0x7f, (byte)0x4d});
-
-        if(response.length == 2)
-        {
-            if(response[0] == (byte)0x9f)
-                return SIMCardType.MagicSIM;
-            else
-                return SIMCardType.Regular;
-        }
-        else
-            return SIMCardType.Regular;
-    }
-
-    private void adicionarMagicSimFiles() {
-        fileTreeController.addMagicSimFiles();
-    }
-
-    private void removerMagicSimFiles() {
-        fileTreeController.removeMagicSimFiles();
-    }
-
 
     private class MenuItemTerminal extends JMenuItem
     {

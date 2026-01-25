@@ -2,6 +2,7 @@ package simexplorer;
 
 import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
+import javax.swing.tree.DefaultMutableTreeNode;
 import simexplorer.decoders.SIMFileNotFoundException;
 import simexplorer.files.DF;
 import simexplorer.files.EF;
@@ -51,6 +52,35 @@ class FileEditorController {
             edtDadosDecodificados.setSelectionStart(0);
             edtDadosDecodificados.setSelectionEnd(0);
         }
+    }
+
+    boolean updateForSelection(DefaultMutableTreeNode node, boolean isRootVisible) {
+        edtDadosBrutos.setText("");
+        edtDadosDecodificados.setText("");
+
+        if (node == null) {
+            return false;
+        }
+
+        String[] pais = buildFilePath(node, isRootVisible);
+        if (node.getChildCount() == 0) {
+            updateEf(node.toString(), pais);
+        } else {
+            updateDf(node.toString(), pais);
+        }
+        edtDadosBrutos.setSelectionStart(0);
+        edtDadosBrutos.setSelectionEnd(0);
+        edtDadosDecodificados.setSelectionStart(0);
+        edtDadosDecodificados.setSelectionEnd(0);
+        return true;
+    }
+
+    private String[] buildFilePath(DefaultMutableTreeNode node, boolean isRootVisible) {
+        String[] pais = new String[isRootVisible ? node.getLevel() : node.getLevel() - 1];
+        for (int i = 0; i < pais.length; i++) {
+            pais[i] = node.getPath()[isRootVisible ? i : i + 1].toString();
+        }
+        return pais;
     }
 
     void editLastFile() {

@@ -28,9 +28,11 @@ import javax.smartcardio.CardChannel;
 import javax.smartcardio.CardException;
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
+import simexplorer.simcardcloner.SIMCardType;
 
 class ApduService {
     private final HistoryLogger historyLogger;
+    private byte currentCla = (byte) 0xA0;
     private CardChannel cardChannel;
     private CommandAPDU commandAPDU;
     private ResponseAPDU responseAPDU;
@@ -43,7 +45,20 @@ class ApduService {
         this.cardChannel = cardChannel;
     }
 
+    void setCurrentCla(byte currentCla) {
+        this.currentCla = currentCla;
+    }
+
+    byte getCurrentCla() {
+        return currentCla;
+    }
+
+    byte[] enviarAPDU(byte[] c) {
+        return enviarAPDU(c, currentCla);
+    }
+
     byte[] enviarAPDU(byte[] c, byte currentCla) {
+        this.currentCla = currentCla;
         c[0] = currentCla;
         commandAPDU = new CommandAPDU(c);
         historyLogger.addEntry("S:" + HistoryLogger.formatBuffer(c));
@@ -54,5 +69,37 @@ class ApduService {
         }
         historyLogger.addEntry("R:" + HistoryLogger.formatBuffer(responseAPDU.getBytes()));
         return responseAPDU.getBytes();
+    }
+
+    boolean supportsUsim() {
+        setCurrentCla((byte) 0x00);
+        byte[] r = enviarAPDU(new byte[]{
+            currentCla, (byte) 0xA4, (byte) 0x04, (byte) 0x00, (byte) 0x07,
+            (byte) 0xA0, 0x00, 0x00, 0x00, (byte) 0x87, 0x10, 0x02
+        });
+
+        if (r.length < 2) {
+            return false;
+        }
+        byte sw1 = r[r.length - 2];
+        return sw1 == (byte) 0x90 || sw1 == (byte) 0x61 || sw1 == (byte) 0x9F;
+    }
+
+    SIMCardType detectSimCardType() {
+        if (supportsUsim()) {
+            return SIMCardType.USIM;
+        }
+        setCurrentCla((byte) 0xA0);
+        byte[] response = enviarAPDU(new byte[]{
+            currentCla, (byte) 0xA4, (byte) 0x00, (byte) 0x00, (byte) 0x02, (byte) 0x7F, (byte) 0x4D
+        });
+
+        if (response.length == 2) {
+            if (response[0] == (byte) 0x9F) {
+                return SIMCardType.MagicSIM;
+            }
+            return SIMCardType.Regular;
+        }
+        return SIMCardType.Regular;
     }
 }
