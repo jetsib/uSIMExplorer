@@ -1,4 +1,4 @@
-package simexplorer.efTools;
+package simexplorer.files.efTools;
 
 public final class FileTreeDef {
 

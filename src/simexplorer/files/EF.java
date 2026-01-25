@@ -29,7 +29,7 @@ import simexplorer.apdusender.APDUSender;
 import simexplorer.decoders.DecodeEF;
 import simexplorer.decoders.DecodeEFFactory;
 import simexplorer.decoders.SIMFileNotFoundException;
-import simexplorer.utils.FcpParser;
+import simexplorer.decoders.utils.FcpParser;
 
 /**
  *

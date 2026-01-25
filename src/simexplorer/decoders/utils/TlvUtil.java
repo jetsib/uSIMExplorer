@@ -1,4 +1,4 @@
-package simexplorer.utils;
+package simexplorer.decoders.utils;
 
 import java.util.ArrayList;
 import java.util.List;

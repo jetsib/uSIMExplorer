@@ -5,7 +5,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
-import simexplorer.efTools.FileTreeDef;
+import simexplorer.files.efTools.FileTreeDef;
 
 public class FileTreeController {
     private final JTree treeFiles;

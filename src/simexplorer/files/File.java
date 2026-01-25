@@ -26,8 +26,8 @@ package simexplorer.files;
 
 import simexplorer.apdusender.APDUSender;
 import simexplorer.decoders.SIMFileNotFoundException;
-import simexplorer.efTools.NodeDef;
-import simexplorer.utils.HexUtil;
+import simexplorer.files.efTools.NodeDef;
+import simexplorer.decoders.utils.HexUtil;
 
 /**
  *
