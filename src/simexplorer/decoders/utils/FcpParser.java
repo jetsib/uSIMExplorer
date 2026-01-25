@@ -49,7 +49,7 @@ public final class FcpParser {
 
     public static Result parseSelectResponse(byte[] selectResponse) {
         if (selectResponse == null || selectResponse.length < 4) {
-            throw new IllegalArgumentException("SELECT response is null/too short");
+            return null;
         }
 
         int dataLen = selectResponse.length - 2;

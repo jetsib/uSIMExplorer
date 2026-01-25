@@ -36,33 +36,79 @@ import simexplorer.decoders.utils.FcpParser;
  * @author Gustavo Vieira Rocha Rabelo <gustavo.vrr@gmail.com>
  */
 public class EF extends File {
-    
-    final private Boolean invalidated;
-    final private Boolean readableAndUpdatableWhenInvalidated;
-    final private StructureOfFile structureOfFile;
-    final private int fileSize;
-    final protected int lengthOfARecord;
-    protected int numRegs;
-    final private IncreaseCommandAllowed increaseCommandAllowed;
-    
-    final private AccessConditions updateAccessConditions;
-    final private AccessConditions readSeekAccessConditions;
-    final private AccessConditions increaseAccessConditions;
-    final private AccessConditions invalidateAccessConditions;
-    final private AccessConditions rehabilitateAccessConditions;
 
-    protected byte[] contentsTranparent;
-    protected byte[][] contentsLinearCyclic;
-    
-    private boolean erroLeitura;
-    
-    final private APDUSender apduSender;
+    private Boolean invalidated = false;
+    private Boolean readableAndUpdatableWhenInvalidated = false;
+    private StructureOfFile structureOfFile = StructureOfFile.Invalid;
+    private int fileSize = 0;
+    protected int lengthOfARecord = 0;
+    protected int numRegs = 0;
+    private IncreaseCommandAllowed increaseCommandAllowed = IncreaseCommandAllowed.NOT_APPLY;
+
+    private AccessConditions updateAccessConditions = null;
+    private AccessConditions readSeekAccessConditions = null;
+    private AccessConditions increaseAccessConditions = null;
+    private AccessConditions invalidateAccessConditions = null;
+    private AccessConditions rehabilitateAccessConditions = null;
+
+    protected byte[] contentsTranparent = new byte[0];
+    protected byte[][] contentsLinearCyclic = new byte[0][0];
+
+    private boolean erroLeitura = false;
+
+    private final APDUSender apduSender;
+    private final FcpParser.Result fcp;
+
+    private byte[] readBinaryTransparentT0(APDUSender apduSender, int fileSize) {
+        int maxLe = 0xFF;
+        byte[] out = new byte[fileSize];
+
+        int offset = 0;
+        while (offset < fileSize) {
+            int le = fileSize - offset;
+            if (le > maxLe) le = maxLe;
+
+            byte p1 = (byte) ((offset >> 8) & 0xFF);
+            byte p2 = (byte) (offset & 0xFF);
+
+            byte[] resp = apduSender.enviarAPDU(new byte[]{(byte) 0xA0, (byte) 0xB0, p1, p2, (byte) le});
+
+            if (resp.length < 2) return new byte[0];
+
+            byte sw1 = resp[resp.length - 2];
+            byte sw2 = resp[resp.length - 1];
+
+            if (sw1 == (byte) 0x6C) {
+                resp = apduSender.enviarAPDU(new byte[]{(byte) 0xA0, (byte) 0xB0, p1, p2, sw2});
+                if (resp.length < 2) return new byte[0];
+                sw1 = resp[resp.length - 2];
+                sw2 = resp[resp.length - 1];
+            }
+
+            if (sw1 != (byte) 0x90 || sw2 != (byte) 0x00) return new byte[0];
+
+            int dataLen = resp.length - 2;
+            if (dataLen <= 0) return new byte[0];
+
+            int copyLen = dataLen;
+            if (copyLen > (fileSize - offset)) copyLen = fileSize - offset;
+
+            for (int i = 0; i < copyLen; i++) out[offset + i] = resp[i];
+
+            offset += copyLen;
+        }
+
+        return out;
+    }
 
     public EF(APDUSender apduSender, String nome, String[] pais) throws SIMFileNotFoundException {
         super(apduSender, nome, pais);
         this.apduSender = apduSender;
 
-        FcpParser.Result fcp = FcpParser.parseSelectResponse(resposta);
+        fcp = FcpParser.parseSelectResponse(resposta);
+        if (fcp==null){
+            return;
+        }
         typeOfFile=fcp.typeOfFile;
 
         fileSize = (char) (fcp.fileSize & 0xFFFF);
@@ -79,17 +125,9 @@ public class EF extends File {
         readableAndUpdatableWhenInvalidated = fcp.readableAndUpdatableWhenInvalidated;
 
         if (structureOfFile == StructureOfFile.Transparent) {
-            resposta = apduSender.enviarAPDU(new byte[]{(byte) 0xA0, (byte) 0xB0, 0x0, 0x0, (byte) fileSize});
-            if (resposta[resposta.length - 2] == (byte) 0x90 && resposta[resposta.length - 1] == 0x00) {
-                erroLeitura = false;
-                contentsTranparent = new byte[fileSize];
-                for (int i = 0; i < contentsTranparent.length; i++) {
-                    contentsTranparent[i] = resposta[i];
-                }
-            } else {
-                erroLeitura = true;
-                contentsTranparent = new byte[0];
-            }
+            contentsTranparent = readBinaryTransparentT0(apduSender, fileSize);
+            erroLeitura = contentsTranparent.length == 0;
+            resposta = new byte[0];
             lengthOfARecord = 0;
             numRegs = 0;
         } else if (structureOfFile == StructureOfFile.LinearFixed || structureOfFile == StructureOfFile.Cyclic) {
@@ -181,6 +219,10 @@ public class EF extends File {
         sb.append(" ");
         sb.append(String.format("%02X", fileID[1])) ;
 
+        if (fcp==null){
+            sb.append("\nEF not found");
+            return sb.toString();
+        }
         sb.append("\nFile size: " + fileSize);
         if(structureOfFile == StructureOfFile.LinearFixed || structureOfFile == StructureOfFile.Cyclic)
             sb.append("\nLength of a record: " + lengthOfARecord);
@@ -199,8 +241,6 @@ public class EF extends File {
 
         if(!erroLeitura)
         {
-            
-            
             if(this.structureOfFile == StructureOfFile.Transparent)
             {
                 sb.append("\n\n\nContent:\n\n");

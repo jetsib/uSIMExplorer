@@ -60,57 +60,63 @@ public class DF extends File{
     private final boolean isCHV2Blocked;
     private final boolean isUnblockCHV2Blocked;
 
+    private final FcpParser.Result fcp;
+
     public DF(APDUSender apduSender, String nome, String[] pais) throws SIMFileNotFoundException {
         super(apduSender, nome, pais);
 
-        FcpParser.Result fcp = FcpParser.parseSelectResponse(resposta);
-        typeOfFile = fcp.typeOfFile;
+        this.fcp = FcpParser.parseSelectResponse(resposta);
+        if (this.fcp!=null) {
+            typeOfFile = fcp.typeOfFile;
 
-        isCHV1Blocked = fcp.isCHV1Blocked;
-        isCHV1Enabled = fcp.isCHV1Enabled;
-        isUnblockCHVIBlocked = fcp.isUnblockCHV1Blocked;
-        isCHV2Blocked = fcp.isCHV2Blocked;
-        isUnblockCHV2Blocked = fcp.isUnblockCHV2Blocked;
+            isCHV1Blocked = fcp.isCHV1Blocked;
+            isCHV1Enabled = fcp.isCHV1Enabled;
+            isUnblockCHVIBlocked = fcp.isUnblockCHV1Blocked;
+            isCHV2Blocked = fcp.isCHV2Blocked;
+            isUnblockCHV2Blocked = fcp.isUnblockCHV2Blocked;
+        }else{
+            typeOfFile = TypeOfFile.INVALID;
+
+            isCHV1Blocked = false;
+            isCHV1Enabled = false;
+            isUnblockCHVIBlocked = false;
+            isCHV2Blocked = false;
+            isUnblockCHV2Blocked = false;
+        }
     }
-    
-    public String getCHVInfo()
-    {
+
+    public String getCHVInfo() {
         StringBuilder sb = new StringBuilder();
-                if( isCHV1Enabled )
-            sb.append("CHV1 enabled");
-        else
-            sb.append("CHV1 disabled");
-        
-        byte numberCHV1CHV2ADM = this.resposta[16];
-        sb.append("\nNumber of CHVs, UNBLOCK CHV, and administrative codes: " + numberCHV1CHV2ADM);
-        
-        byte chv1Status = this.resposta[18];
-        sb.append("\nCHV1 status-> Number of false presentations remaining ('0' means blocked): " + (chv1Status & 0xF));
-        sb.append("\nCHV1 status-> ");
-        sb.append((byte)(0x80 & chv1Status) == (byte)0x80?"secret code initialised":"secret code not initialised");
-        
-        byte puk1Status = this.resposta[19];
-        sb.append("\nUNBLOCK CHV1 status-> Number of false presentations remaining ('0' means blocked): " + (puk1Status & 0xF));
-        sb.append("\nUNBLOCK CHV1 status-> ");
-        sb.append((byte)(0x80 & puk1Status) == (byte)0x80?"secret code initialised":"secret code not initialised");
-        
 
-        byte chv2Status = this.resposta[20];
-        sb.append("\nCHV2 status-> Number of false presentations remaining ('0' means blocked): " + (chv2Status & 0xF));
-        sb.append("\nCHV2 status-> ");
-        sb.append((byte)(0x80 & chv2Status) == (byte)0x80?"secret code initialised":"secret code not initialised");
-        
-        byte puk2Status = this.resposta[21];
-        sb.append("\nUNBLOCK CHV2 status-> Number of false presentations remaining ('0' means blocked): " + (puk2Status & 0xF));
-        sb.append("\nUNBLOCK CHV2 status-> ");
-        sb.append((byte)(0x80 & puk2Status) == (byte)0x80?"secret code initialised":"secret code not initialised");
-        
-        
+        if (isCHV1Enabled) sb.append("CHV1 enabled");
+        else sb.append("CHV1 disabled");
+
+        if (fcp == null || fcp.rawPinStatusTemplate == null) {
+            sb.append("\nPIN status template not available in FCP");
+            return sb.toString();
+        }
+
+        byte[] pst = fcp.rawPinStatusTemplate;
+
+        appendChvLine(sb, "CHV1", pst, 0);
+        appendChvLine(sb, "UNBLOCK CHV1", pst, 1);
+        appendChvLine(sb, "CHV2", pst, 2);
+        appendChvLine(sb, "UNBLOCK CHV2", pst, 3);
+
         return sb.toString();
-
-        
     }
-    
+
+    private void appendChvLine(StringBuilder sb, String label, byte[] pst, int idx) {
+        if (pst.length <= idx) {
+            sb.append("\n").append(label).append(" status-> not available");
+            return;
+        }
+
+        byte v = pst[idx];
+        sb.append("\n").append(label).append(" status-> Number of false presentations remaining ('0' means blocked): ").append(v & 0x0F);
+        sb.append("\n").append(label).append(" status-> ").append(((v & (byte) 0x80) == (byte) 0x80) ? "secret code initialised" : "secret code not initialised");
+    }
+
     @Override
     public String toString()
     {
@@ -122,12 +128,16 @@ public class DF extends File{
         sb.append(" ");
         sb.append(String.format("%02X", fileID[1])) ;
 
+        if (fcp == null) {
+            sb.append("\nDF not found");
+            return sb.toString();
+        }
+
         sb.append("\nType of file: " + typeOfFile);
         
         sb.append("\n").append(this.getCHVInfo());
         
         return sb.toString();
-        
         
     }
     
