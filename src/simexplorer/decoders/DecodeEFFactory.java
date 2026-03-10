@@ -75,6 +75,10 @@ public class DecodeEFFactory {
         {
             return new DecodeEF8f0d();
         }
+        if(effile.trim().equals("HPPLMN"))
+        {
+            return new DecodeHPPLMN();
+        }
         if(effile.trim().toUpperCase().endsWith("PLMN"))
         {
             return new DecodePLMN();

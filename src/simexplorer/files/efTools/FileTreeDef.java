@@ -42,7 +42,7 @@ public final class FileTreeDef {
             NodeDef.ef("LP", 0x6F05),
             NodeDef.ef("KC", 0x6F20),
             NodeDef.ef("PLMNSel", 0x6F30),
-            NodeDef.ef("HPLMN", 0x6F31),
+            NodeDef.ef("HPPLMN", 0x6F31),
             NodeDef.ef("FPLMN", 0x6F7B),
             NodeDef.ef("AD", 0x6FAD),
             NodeDef.ef("PHASE", 0x6FAE),
@@ -60,6 +60,7 @@ public final class FileTreeDef {
             NodeDef.ef("SPN",  0x6F46),
 
             NodeDef.ef("UST", 0x6F05),
+            NodeDef.ef("HPPLMN", 0x6F31),
             NodeDef.ef("PLMNwAcT", 0x6F60),
             NodeDef.ef("OPLMNwAcT", 0x6F61),
             NodeDef.ef("HPLMNwAcT", 0x6F62),
